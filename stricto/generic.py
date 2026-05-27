@@ -20,7 +20,7 @@ from .error import (
 )
 from .permissions import Permissions
 from .selector import Selector
-from .event import eventManager
+from .event import EVENT_MANAGER
 from .toolbox import validation_parameters
 
 PREFIX = "MODEL_"
@@ -137,7 +137,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 # origin_path = "$"
                 # if len(event) > 2:
                 #     origin_path = event[2] if isinstance(event[2], list) else [event[2]]
-                eventManager.register_event(self, event_name, f)
+                EVENT_MANAGER.register_event(self, event_name, f)
 
         # transformation of the value before setting
         self._transform = options.get("transform")
@@ -440,7 +440,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         """
 
         root = self.get_root()
-        eventManager.trigg(event_name, root, self, **kwargs)
+        EVENT_MANAGER.trigg(event_name, root, self, **kwargs)
 
     def get_root(self) -> Self:
         """
@@ -754,7 +754,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         result._attribute_name = self._attribute_name
         result._default = self._default
 
-        eventManager.copy_object_id(id(self), id(result))
+        EVENT_MANAGER.copy_object_id(id(self), id(result))
         # Trigg the "copied" event (used by default)
         # if self.am_i_root():
         #     self.trigg("copied", self)
@@ -958,7 +958,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 if self._on_change:
                     self._on_change(self._old_value, self.get_value(), self.get_root())
 
-                eventManager.trigg("changed", root, self)
+                EVENT_MANAGER.trigg("changed", root, self)
 
     def patch_internal(self, op: str, value) -> None:
         """

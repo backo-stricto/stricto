@@ -178,4 +178,4 @@ class SingletonEventManager:
         self._trigg_internal(event_name, root, root, src_object, **kwargs)
 
 
-eventManager = SingletonEventManager()
+EVENT_MANAGER = SingletonEventManager()
