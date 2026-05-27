@@ -246,38 +246,6 @@ class TestTuple(unittest.TestCase):
         self.assertEqual(a > b, False)
         b.set(None)
 
-    def no_test_add_tuple(self):
-        """
-        Test add a tuple to another
-        """
-        a = Tuple((Bool(), Int(max=30)))
-        b = Tuple((Bool(), Int(max=10)))
-        a.set((True, 22))
-        b.set((True, 8))
-        c = a + b
-        self.assertEqual(c, (True, 22, True, 8))
-        self.assertEqual(c[3], 8)
-
-        none_tuple = Tuple((Bool(), Int(max=10)))
-        with self.assertRaises(STypeError) as e:
-            a = a + ("ee", "aa")
-        self.assertEqual(
-            e.exception.to_string(), "$: Can only concatenate Tuple to Tuple"
-        )
-        with self.assertRaises(STypeError) as e:
-            a = a + none_tuple
-        self.assertEqual(
-            e.exception.to_string(), "$: Can only concatenate Tuple to Tuple"
-        )
-
-        with self.assertRaises(SConstraintError) as e:
-            c.set((True, 1, False, 11))
-        self.assertEqual(e.exception.to_string(), '$[3]: Must be below Maximal ("11")')
-        c.set((True, 1, False, 9))
-        self.assertEqual(c, (True, 1, False, 9))
-        self.assertEqual(a, (True, 22))
-        self.assertEqual(b, (True, 8))
-
     def test_json_tuple(self):
         """
         Test tuple to json

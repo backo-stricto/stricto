@@ -16,7 +16,7 @@ class TestBool(unittest.TestCase):
     def newset(self):
         """new set"""
         a = Bool()
-        a.new_set(True)
+        a.set(True)
 
     def test_error_type(self):
         """
@@ -24,7 +24,7 @@ class TestBool(unittest.TestCase):
         """
         a = Bool()
         with self.assertRaises(STypeError) as e:
-            a.new_set(12.3)
+            a.set(12.3)
         self.assertEqual(e.exception.to_string(), '$: Not a bool "12.3"')
 
     def test_default(self):
@@ -41,7 +41,7 @@ class TestBool(unittest.TestCase):
         """
         a = Bool(default=True)
         self.assertEqual(a, True)
-        a.new_set(False)
+        a.set(False)
         self.assertEqual(a, False)
         a.rollback()
         self.assertEqual(a, True)

@@ -32,12 +32,6 @@ class Tuple(ListAndTuple):
             mm = copy.copy(element_schema)
             mm._parent = self
 
-            # Copy events fron child and drop child event_manager
-            if mm._event_manager is not None:
-                for event in mm._event_manager.get_all_events():
-                    self._event_manager.register_event(event)
-                mm._event_manager = None
-
             mm._attribute_name = f"[{i}]"
             self._schema.append(mm)
             i = i + 1

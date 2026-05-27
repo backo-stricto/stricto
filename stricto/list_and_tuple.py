@@ -1,7 +1,7 @@
 """Module providing the List() Class"""
 
 import copy
-from typing import Any
+from typing import Any, Self
 from .generic import GenericType, ViewType
 from .error import SError, SAttributeError
 
@@ -113,6 +113,18 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         #        return (ViewType.NO, None) if final is False else None
         return (ViewType.YES, result) if final is False else result
 
+    def get_childs(self) -> list[Self]:
+
+        if self._value is None:
+            return []
+
+        a = []
+        for v in self._value:
+            if v.exists_or_can_read() is False:
+                continue
+            a.append(v)
+        return a
+
     def start_record(self) -> None:
         """
         Record the value in case of Rollback
@@ -136,14 +148,14 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         self._updating_process = False
         if self._value is None:
             return False
-
+        changed = False
         for v in self._value:
             if v is None:
                 continue
             c = v.end_record()
             if c is True:
-                return True
-        return False
+                changed = True
+        return changed
 
     def rollback(self) -> None:
         """
@@ -204,7 +216,9 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
                 self._value = []
                 index = 0
                 for val in default_value:
-                    v = self._set_element_value(val, index) #pylint: disable=assignment-from-none
+                    v = self._set_element_value(  # pylint: disable=assignment-from-none
+                        val, index
+                    )
                     self._value.append(v)
                     index = index + 1
                     changed = True
@@ -236,7 +250,9 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
                 self._value = []
                 index = 0
                 for val in value:
-                    v = self._set_element_value(val, index)  #pylint: disable=assignment-from-none
+                    v = self._set_element_value(  # pylint: disable=assignment-from-none
+                        val, index
+                    )
                     self._value.append(v)
                     index = index + 1
                     changed = True
@@ -251,10 +267,12 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
                     changed = True
         return changed
 
-    def _set_element_value(self, value: Any, index: int = 0) -> GenericType: #pylint: disable=unused-argument
+    def _set_element_value(  # pylint: disable=unused-argument
+        self, value: Any, index: int = 0
+    ) -> GenericType:
         """
         Set an element From model
-        
+
         must be overwritten
         """
         return None
@@ -290,7 +308,9 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         index = 0
         if corrected_value is not None:
             for val in corrected_value:
-                v = self._set_element_value(val, index)  #pylint: disable=assignment-from-none
+                v = self._set_element_value(  # pylint: disable=assignment-from-none
+                    val, index
+                )
                 self._value.append(v)
                 index = index + 1
                 changed = True

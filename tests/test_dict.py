@@ -34,6 +34,7 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         super().__init__(*args, **kwargs)
         self.i = 0
         self.event_name = None
+        self.event_trigged = False
 
     def test_require_only(self):
         """
@@ -66,24 +67,23 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
             self.assertEqual(a.d, None)
         self.assertEqual(e.exception.args[0], "'Dict' object has no attribute 'd'")
 
-    def no_test_copy(self):
+    def test_copy(self):
         """test copy"""
-        # a = Dict({"b": Int(default=3), "c": String()})
-        # self.assertEqual(a.b, 3)
-        # b = a.copy()
-        # self.assertEqual(b.b, 3)
+        a = Dict({"b": Int(default=3), "c": String()})
+        self.assertEqual(a.b, 3)
+        b = a.copy()
+        self.assertEqual(b.b, 3)
 
         self.i = 0
 
         def my_default(o):  # pylint: disable=unused-argument
-            print("set default")
             self.i = self.i + 1
             return self.i
 
         a = Dict({"b": Int(default=my_default), "c": String()})
-        self.assertEqual(a.b, 2)
-        # b = a.copy()
-        # self.assertEqual(b.b, 3)
+        self.assertEqual(a.b, 1)
+        b = a.copy()
+        self.assertEqual(b.b, 1)
 
     def test_set_error(self):
         """
@@ -122,6 +122,15 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
             'In function "__init__", the parameter "schema" must be type <class \'dict\'>',
         )
 
+    def test_set_none(self):
+        """
+        test set non existing value
+        """
+        a = Dict({"b": Int(), "c": Int()})
+        with self.assertRaises(STypeError) as e:
+            a.set(None)
+        self.assertEqual(e.exception.to_string(), '$: Dict cannot be set to "None"')
+
     def test_set_no_value(self):
         """
         test set non existing value
@@ -130,14 +139,6 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaises(SAttributeError) as e:
             a.set({"b": 1, "c": 2, "d": "yolo"})
         self.assertEqual(e.exception.to_string(), '$: Dict object has no attribute "d"')
-
-    def test_set_none_value(self):
-        """
-        test set non existing value
-        """
-        a = Dict({"b": Int(), "c": Int()})
-        a.set(None)
-        self.assertEqual(a.get_value(), {"b": None, "c": None})
 
     def test_default(self):
         """
@@ -282,18 +283,6 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaises(AttributeError) as e:
             a.d.e = 22
         self.assertEqual(e.exception.args[0], "'Dict' object has no attribute 'd'")
-
-    def no_test_reference_type(self):
-        """
-        Test references
-        """
-        a = Dict({"b": Int(), "c": Int()})
-        a.set({"b": 1, "c": 2})
-        a.b = a.c
-        a.c = 33
-        self.assertEqual(a.b, 33)
-        a.b = 22
-        self.assertEqual(a.c, 22)
 
     def test_equality(self):
         """
@@ -443,11 +432,12 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         a = Dict(
             {
-                "b": Int(default=0, set=(lambda o: o.d - 1, "$.d")),
-                "d": Int(default=0, set=(lambda o: o.b + 1, "$.b")),
+                "b": Int(default=0, set=lambda o: o.d - 1),
+                "d": Int(default=0, set=lambda o: o.b + 1),
                 "c": Int(default=0),
             }
         )
+        self.assertEqual(repr(a), "{'b': 0, 'd': 0, 'c': 0}")
         a.b = 2
         self.assertEqual(a.d, 3)
         a.d = 5
@@ -466,16 +456,6 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         )
         a.set({"c": 2})
         self.assertGreater(a.b, 2)
-
-    def no_test_not_exist_stupid(self):
-        """
-        test not exist stupid case
-        """
-        a = Int(exists=False)
-        a.set(2)
-        with self.assertRaises(SAttributeError) as e:
-            a.get_value()
-        self.assertEqual(e.exception.to_string(), "$: Locked")
 
     def test_not_exist(self):
         """
@@ -626,7 +606,7 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
             {
                 "a": Int(default=1),
                 "b": Int(default=3),
-                "c": Int(on=[("load", trigged_load), ("bb", trigged_bb, "$.c")]),
+                "c": Int(on=[("load", trigged_load), ("bb", trigged_bb)]),
             }
         )
 
@@ -643,11 +623,6 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.event_name = None
         a.c.trigg("bb", param_test=12)
         self.assertEqual(self.event_name, "bb")
-
-        # Must not work (not root)
-        self.event_name = None
-        a.trigg("bb")
-        self.assertEqual(self.event_name, None)
 
     def test_bad_event(self):
         """
@@ -946,3 +921,22 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(
             e.exception.to_string(), '$.b: Constraint not validated for value="20"'
         )
+
+    def test_event_new(self):
+        """
+        Test event option
+        """
+        self.event_trigged = False
+
+        def on_event(name, root, me, **kwargs):  # pylint: disable=unused-argument
+            """
+            just a change option
+            """
+            self.event_trigged = True
+
+        a = Dict({"aa": Int(on=[("fake_event", on_event)]), "bb": Int()})
+        self.assertEqual(self.event_trigged, False)
+        a.set({"aa": 1, "bb": 2})
+        self.assertEqual(self.event_trigged, False)
+        a.trigg("fake_event")
+        self.assertEqual(self.event_trigged, True)

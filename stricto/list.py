@@ -306,12 +306,6 @@ class List(
         a = self.duplicate_in_list()
         model = self._type.copy()
         model._parent = self
-
-        # Copy events fron child and drop child event_manager
-        for event in model._event_manager.get_all_events():
-            self._event_manager.register_event(event)
-        model._event_manager = None
-
         model._attribute_name = f"[{key}]"
         model.set(value)
         a.insert(key, model)
@@ -341,12 +335,6 @@ class List(
             for v in value:
                 model = self._type.copy()
                 model._parent = self
-
-                # Copy events fron child and drop child event_manager
-                for event in model._event_manager.get_all_events():
-                    self._event_manager.register_event(event)
-                model._event_manager = None
-
                 model._attribute_name = "[slice]"
                 model.set(v)
                 models.append(model)
@@ -358,12 +346,6 @@ class List(
         else:
             model = self._type.copy()
             model._parent = self
-
-            # Copy events fron child and drop child event_manager
-            for event in model._event_manager.get_all_events():
-                self._event_manager.register_event(event)
-            model._event_manager = None
-
             model._attribute_name = f"[{key}]"
             model.set(value)
             a[key].set(value)
@@ -453,12 +435,6 @@ class List(
 
         model = self._type.copy()
         model._parent = self
-
-        # Copy events fron child and drop child event_manager
-        for event in model._event_manager.get_all_events():
-            self._event_manager.register_event(event)
-        model._event_manager = None
-
         model._attribute_name = f"[{len(self)}]"
         model.set(value)
 
@@ -487,12 +463,6 @@ class List(
         for value in second_list:
             model = self._type.copy()
             model._parent = self
-
-            # Copy events fron child and drop child event_manager
-            for event in model._event_manager.get_all_events():
-                self._event_manager.register_event(event)
-            model._event_manager = None
-
             model._attribute_name = f"[{i}]"
             model.set(value)
             a.append(model)
@@ -527,12 +497,6 @@ class List(
             for v in value:
                 model = self._type.copy()
                 model._parent = self
-
-                # Copy events fron child and drop child event_manager
-                for event in model._event_manager.get_all_events():
-                    self._event_manager.register_event(event)
-                model._event_manager = None
-
                 model._attribute_name = f"[{i}]"
                 c = model.set_value_without_checks(v, trigg_change_event)
                 self._value.append(model)

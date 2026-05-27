@@ -24,7 +24,7 @@ class TestString(unittest.TestCase):  # pylint: disable=too-many-public-methods
         a.set("yeah")
         self.assertEqual(a, "yeah")
 
-    def no_test_add(self):
+    def test_add(self):
         """
         Add 2 strings
         """
@@ -33,7 +33,7 @@ class TestString(unittest.TestCase):  # pylint: disable=too-many-public-methods
         b = String()
         b.set("bar")
         c = a + b
-        self.assertEqual(type(c), String)
+        self.assertEqual(type(c), str)
         self.assertEqual(c, "foobar")
 
     def test_compare(self):

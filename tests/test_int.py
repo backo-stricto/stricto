@@ -5,7 +5,7 @@ test for Int()
 
 import unittest
 
-from stricto import Int, SConstraintError, STypeError
+from stricto import Int, SConstraintError, STypeError, SAttributeError
 
 
 def pair_only(value, o):  # pylint: disable=unused-argument
@@ -30,6 +30,7 @@ class TestInt(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def __init__(self, m):
         unittest.TestCase.__init__(self, m)
         self.on_change_bool = False
+        self.event_trigged = False
 
     def test_error_type(self):
         """
@@ -100,21 +101,6 @@ class TestInt(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertGreaterEqual(b, a)
         self.assertLessEqual(a, b)
         self.assertEqual(a > 8, True)
-
-    def no_test_object_affectation(self):
-        """
-        Test __add__
-        """
-        a = Int(max=10)
-        a.set(9)
-        b = Int()
-        b.set(9)
-        with self.assertRaises(SConstraintError) as e:
-            c = a + b
-        self.assertEqual(e.exception.to_string(), '$: Must be below Maximal ("18")')
-        c = b + a
-        self.assertEqual(type(c), Int)
-        self.assertEqual(c, 18)
 
     def test_int_operator(self):
         """
@@ -218,3 +204,32 @@ class TestInt(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(self.on_change_bool, False)
         a.set(11)
         self.assertEqual(self.on_change_bool, True)
+
+    def no_test_not_exist_stupid(self):
+        """
+        test not exist stupid case
+        """
+        a = Int(exists=False)
+        a.set(2)
+        with self.assertRaises(SAttributeError) as e:
+            a.get_value()
+        self.assertEqual(e.exception.to_string(), "$: Locked")
+
+    def test_event(self):
+        """
+        Test event option
+        """
+        self.event_trigged = False
+
+        def on_event(name, root, me, **kwargs):  # pylint: disable=unused-argument
+            """
+            just a change option
+            """
+            self.event_trigged = True
+
+        a = Int(on=[("fake_event", on_event)])
+        self.assertEqual(self.event_trigged, False)
+        a.set(10)
+        self.assertEqual(self.event_trigged, False)
+        a.trigg("fake_event")
+        self.assertEqual(self.event_trigged, True)

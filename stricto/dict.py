@@ -1,7 +1,7 @@
 """Module providing the Dict() Class"""
 
 import copy
-from typing import Any
+from typing import Any, Self
 from .generic import GenericType, ViewType
 from .error import SSyntaxError, STypeError, SAttributeError, SError
 from .selector import Selector
@@ -40,14 +40,6 @@ class Dict(GenericType):
             mm = copy.copy(m)
             mm._parent = self
             mm._attribute_name = key
-
-            # Copy events fron child and drop child event_manager
-            if mm._event_manager is not None:
-                for event in mm._event_manager.get_all_events():
-                    event.me = mm
-                    self._event_manager.register_event(event)
-                mm._event_manager = None
-
             setattr(self, key, mm)
             self._keys.append(key)
 
@@ -128,6 +120,9 @@ class Dict(GenericType):
         """
         return self._keys
 
+    def is_none(self) -> bool:
+        return False
+
     def get_view(self, view_name, final=True):
         """
         Return all elements belonging to view_name
@@ -200,7 +195,6 @@ class Dict(GenericType):
             "root",
             "_parent",
             "_attribute_name",
-            "_event_manager",
             "_default",
             "_old_value",
             "_updating_process",
@@ -263,8 +257,17 @@ class Dict(GenericType):
             result.__dict__[key]._parent = result
             result.__dict__[key]._attribute_name = key
 
-        result._locked = True # pylint: disable=attribute-defined-outside-init
+        result._locked = True  # pylint: disable=attribute-defined-outside-init
         return result
+
+    def get_childs(self) -> list[Self]:
+        a = []
+        for key in self._keys:
+            v = object.__getattribute__(self, key)
+            if v.exists_or_can_read() is False:
+                continue
+            a.append(v)
+        return a
 
     def __repr__(self):
         a = {}
@@ -527,14 +530,15 @@ class Dict(GenericType):
         :rtype: bool
         """
         self._updating_process = False
+        changed = False
         for key in self._keys:
             v = self.__dict__[key]
             if v is None:
                 continue
             c = v.end_record()
             if c is True:
-                return True
-        return False
+                changed = True
+        return changed
 
     def rollback(self):
         """
@@ -639,7 +643,7 @@ class Dict(GenericType):
 
         # Check correct type or raise an Error
         if corrected_value is None:
-            return False
+            raise STypeError('{0}: Dict cannot be set to "None"', self.path_name())
 
         self.check_type(corrected_value)
 
@@ -652,7 +656,7 @@ class Dict(GenericType):
                 if c is True:
                     changed = True
 
-        # rais an error if k is not in list af available keys
+        # raise an error if k is not in list af available keys
         for key in corrected_value:
             if key not in self._keys:
                 raise SAttributeError(
@@ -671,10 +675,11 @@ class Dict(GenericType):
         if self.exists_or_can_read() is False:
             raise SAttributeError("{0}: Locked", self.path_name())
 
-        for key in self._keys:
-            v = self.__dict__[key]
-            if v.exists_or_can_read() is not False:
-                v.check_value()
+        if self.is_none() is False:
+            for key in self._keys:
+                v = self.__dict__[key]
+                if v.exists_or_can_read() is not False:
+                    v.check_value()
 
         # Check constraints
         self.check_constraints(self.get_value())

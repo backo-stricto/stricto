@@ -20,7 +20,7 @@ from .error import (
 )
 from .permissions import Permissions
 from .selector import Selector
-from .event import EventManager, StrictoEvent
+from .event import eventManager
 from .toolbox import validation_parameters
 
 PREFIX = "MODEL_"
@@ -130,17 +130,14 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         on_events = options.get("on")
 
         # Event manager. Will be discard if not root.
-        self._event_manager = EventManager(self)
         if on_events is not None:
             for event in on_events:
                 event_name = event[0]
                 f = event[1]
-                origin_path = "$"
-                if len(event) > 2:
-                    origin_path = event[2] if isinstance(event[2], list) else [event[2]]
-                self._event_manager.register_event(
-                    StrictoEvent(event_name, f, self, origin_path)
-                )
+                # origin_path = "$"
+                # if len(event) > 2:
+                #     origin_path = event[2] if isinstance(event[2], list) else [event[2]]
+                eventManager.register_event(self, event_name, f)
 
         # transformation of the value before setting
         self._transform = options.get("transform")
@@ -154,58 +151,31 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # on change trigger
         self._on_change = options.get("onchange")
 
-        # Set a on_change
-        if len(self._constraints) > 0:
-            self._event_manager.register_event(
-                StrictoEvent(
-                    "change",
-                    lambda event_name, root, me, **kwargs: me._wrap_recheck_value(),
-                    self,
-                    "$",
-                )
-            )
-
         # the  value is computed. Set the event "changed" for that
-        auto_set = options.get("set")
-        self._auto_set = auto_set
-
-        if auto_set is not None:
-            function_to_call = (
-                auto_set if isinstance(auto_set, Callable) else auto_set[0]
-            )
-            selectors_to_listen = "$" if isinstance(auto_set, Callable) else auto_set[1]
-
-            # Set an answer to event "change" to modify this value
-            self._event_manager.register_event(
-                StrictoEvent(
-                    "change",
-                    lambda event_name, root, me, **kwargs: me._change_trigg_wrap(
-                        root, function_to_call, **kwargs
-                    ),
-                    self,
-                    selectors_to_listen,
-                )
-            )
+        self._auto_set = options.get("set")
 
         # Set the default value
         # the value is with a default as a function. Set the event "copied" for that
         self._default = options.get("default")
-        self._need_to_run_default_function = False
         if self._default is not None:
-            if not callable(self._default):
-                self.set_default_value()
-            else:
-                self._event_manager.register_event(
-                    StrictoEvent(
-                        "copied",
-                        lambda event_name, root, me, **kwargs: me._change_trigg_wrap(
-                            root, me._default, **kwargs
-                        ),
-                        self,
-                        "$",
-                    )
-                )
-                self._need_to_run_default_function = True
+            self.set_default_value()
+
+    def get_childs(self) -> list[Self]:
+        """Return the list of child of this object
+
+        :return: the list of child of this object
+        :rtype: list[GenericType]
+        """
+        return []
+
+    def is_none(self) -> bool:
+        """Return True if the value is None
+
+        used differently when it is a dict
+        :return: True if the value is None
+        :rtype: bool
+        """
+        return self._value is None
 
     def enable_permissions(self) -> None:
         """set permissions to on"""
@@ -460,7 +430,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         self.set(a)
 
     @validation_parameters
-    def trigg(self, event_name: str, src_object: Self = None, **kwargs) -> None:
+    def trigg(self, event_name: str, **kwargs) -> None:
         """Trigg an event
 
         :param event_name: _description_
@@ -469,20 +439,8 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :type src_object: GenericType | None
         """
 
-        if self.am_i_root() is True:
-            if self._event_manager is None:
-                raise SSyntaxError("WTF no event manager for root {0}", type(self))
-
-            s = src_object if src_object is not None else self
-
-            try:
-                self._event_manager.trigg(event_name, self, s, **kwargs)
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                self.rollback()
-                raise e from e
-            return
-
-        self.get_root().trigg(event_name, self, **kwargs)
+        root = self.get_root()
+        eventManager.trigg(event_name, root, self, **kwargs)
 
     def get_root(self) -> Self:
         """
@@ -792,14 +750,14 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         result = cls.__new__(cls)
         result.__dict__.update(self.__dict__)
         result.__dict__["_permissions"] = copy.copy(self._permissions)
-        result.__dict__["_event_manager"] = copy.copy(self._event_manager)
         result._parent = self._parent
         result._attribute_name = self._attribute_name
         result._default = self._default
 
+        eventManager.copy_object_id(id(self), id(result))
         # Trigg the "copied" event (used by default)
-        if self.am_i_root():
-            self.trigg("copied", self)
+        # if self.am_i_root():
+        #     self.trigg("copied", self)
 
         return result
 
@@ -883,6 +841,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :return: True if changed
         :rtype: bool
         """
+
         if not callable(self._auto_set):
             return False
 
@@ -933,7 +892,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             if self.can_modify() is False:
                 raise SRightError("{0}: cannot modify value", self.path_name())
 
-        if self._not_none is True and self._value is None:
+        if self._not_none is True and self.is_none():
             raise SConstraintError(
                 '{0}: Cannot be empty "{value}"', self.path_name(), value=self._value
             )
@@ -941,15 +900,18 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # Check constraints
         self.check_constraints(self._value)
 
-    def trigg_changements(self) -> None:
-        """Trig all changements"""
+    def release_events(self) -> None:
+        """
+        Release all avents trigged during set operations
+        """
+
         if self._value == self._old_value:
             return
 
         if self._on_change:
             self._on_change(self._old_value, self.get_value(), self.get_root())
 
-    def new_set(self, value: Any) -> None:
+    def set(self, value: Any) -> None:
         """Set function
 
         :param value: the value to set
@@ -959,40 +921,44 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         root = self.get_root()
         my_id = id(self)
 
+        changed = False
+
         if root._updating_process is False:
             root._updating_process = my_id
             root.start_record()
-            root.set_default_value()
+            c = root.set_default_value()
+            if c is True:
+                changed = True
 
         try:
-            self.set_value(value)
-            self.check_value()
+            c = self.set_value(value)
+            if c is True:
+                changed = True
+
         except Exception as e:
             root.rollback()
             raise e from e
 
         if root._updating_process == my_id:
-            try:
-                root.compute_value()
-                root.check_value()
-                root.trigg_changements()
-            except Exception as e:
-                root.rollback()
-                raise e from e
+            changed_while_recompute = True
+            while changed_while_recompute is True:
+                try:
+                    changed_while_recompute = root.compute_value()
+                    if changed_while_recompute is True:
+                        changed = True
+                    root.check_value()
+                except Exception as e:
+                    root.rollback()
+                    raise e from e
+
             root.end_record()
 
+            if changed is True:
 
-    def set(self, value: Any) -> None:
-        """
-        Fill with a value or raise an Error if not valid
+                if self._on_change:
+                    self._on_change(self._old_value, self.get_value(), self.get_root())
 
-        :param self: Description
-        :param value: the valut to set in
-        :type value: Any
-        :raises SAttributeError: try to modify an non existing object
-
-        """
-        return self.new_set(value)
+                eventManager.trigg("changed", root, self)
 
     def patch_internal(self, op: str, value) -> None:
         """
@@ -1110,11 +1076,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :rtype: Any
 
         """
-        if self._need_to_run_default_function is True:
-            self._value = self._default(self.get_root())
-            self._old_value = self._value
-            self._need_to_run_default_function = False
-
         return self._value
 
     def get_encoded(self) -> str:

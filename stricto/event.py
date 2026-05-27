@@ -80,104 +80,102 @@ class StrictoEvent:
         self.function(self.listen_event_name, root, remapped_me, **kwargs)
 
 
-class EventManager:
-    """Events manager for a root object"""
+class SingletonEventManager:
+    """
+    Event manager object
+    """
 
-    _events = {}
-    trigg_path = []
+    _events_per_object = {}
 
-    def __init__(self, root: Any):
-        self._root = root
-        self._events = {}
-        self.trigg_path = []
+    def __init__(self):
+        """
+        Generator
+        """
+        self._events_per_object = {}
 
-    def __copy__(self):
-        cls = self.__class__
-        result = cls.__new__(cls)
-        result._events = {}
-        result._root = self._root
-        result.trigg_path = self.trigg_path
-        # copy all events
-        result._events = copy.copy(self._events)
-        return result
-
-    def register_event(self, event: StrictoEvent) -> None:
+    def register_event(
+        self, me: Any, listen_event_name: str, function: Callable
+    ) -> None:
         """Register an event
 
         :param event: The event to register
         :type event: StrictoEvent
         """
-        if event.listen_event_name not in self._events:
-            self._events[event.listen_event_name] = []
-        self._events[event.listen_event_name].append(event)
+        # Create events per id
+        my_id = id(me)
+        if my_id not in self._events_per_object:
+            self._events_per_object[my_id] = {}
 
-    def get_all_events(self) -> list[StrictoEvent]:
-        """Get all event as a list
+        events = self._events_per_object[my_id]
 
-        :return: _description_
-        :rtype: list[StrictoEvent]
+        if listen_event_name not in events:
+            events[listen_event_name] = []
+        events[listen_event_name].append(function)
+
+    def free_events(self, me: Any) -> None:
+        """Erase events for this root object
+
+        :param me: me
+        :type me: GenericType
         """
-        a = []
-        for event_name in self._events:
-            a.extend(self._events[event_name])
-        return a
+        my_id = id(me)
+        if my_id in self._events_per_object:
+            del self._events_per_object[my_id]
 
-    def add_to_trig_path_or_ignore_if_loop(
-        self, event_name: str, src_object: Any, event_to_trigg=StrictoEvent
-    ) -> bool:
-        """Add to the path
+    def copy_object_id(self, src_id: int, dst_id: int) -> None:
+        """Copy event when an object is copied
+
+        :param src_id: _description_
+        :type src_id: int
+        :param dst_id: _description_
+        :type dst_id: int
+        """
+        if src_id not in self._events_per_object:
+            return
+
+        self._events_per_object[dst_id] = copy.copy(self._events_per_object[src_id])
+
+    def _trigg_internal(
+        self, event_name: str, root: Any, me: Any, src_object: Any, **kwargs
+    ) -> None:
+        """Trig reccursively the event
 
         :param event_name: _description_
         :type event_name: str
         :param root: _description_
         :type root: Any
+        :param me: _description_
+        :type me: Any
         :param src_object: _description_
         :type src_object: Any
-        :return: _description_
-        :rtype: bool
         """
-        path = src_object.path_name()
-        if (event_name, path, id(event_to_trigg.function)) in self.trigg_path:
-            # print(f'loop in events { (event_name, path, id(event_to_trigg.function))} already in {self.trigg_path}')
-            return False
 
-        self.trigg_path.append((event_name, path, id(event_to_trigg.function)))
-        return True
+        my_id = id(me)
+
+        if my_id in self._events_per_object:
+            events = self._events_per_object[my_id]
+            if event_name in events:
+                for func in events[event_name]:
+                    func(event_name, root, me, **kwargs)
+
+        # Go deeper
+        childs = me.get_childs()
+        for child in childs:
+            k = copy.copy(kwargs)
+            self._trigg_internal(event_name, root, child, src_object, **k)
 
     def trigg(self, event_name: str, root: Any, src_object: Any, **kwargs) -> None:
-        """Trig the event
+        """Trigg an event
 
-        event_name, self, me
-
-        :param event_name: the name of the event
+        :param event_name: The name of the event
         :type event_name: str
-        :param origin_path: the origin path who trigg the event
-        :type origin_path: str
+        :param root: the root object
+        :type root: GenericType (usually a Dict)
+        :param src_object: the object wich trigg the event
+        :type src_object: GenericType
         """
+        # print(f'eventmanager trigg {event_name} {type(root)}')
+        self._trigg_internal(event_name, root, root, src_object, **kwargs)
 
-        if event_name not in self._events:
-            return
 
-        origin_selector = Selector(src_object.path_name())
-        for event in self._events[event_name]:
-            # Match one of listen selectons from events
-            if event.match_selectors(origin_selector):
-                if (
-                    self.add_to_trig_path_or_ignore_if_loop(
-                        event_name, src_object, event
-                    )
-                    is True
-                ):
-
-                    try:
-                        event.trigg(root, **kwargs)
-                    except Exception as e:  # pylint: disable=broad-exception-caught
-                        # end of this event, remove from the trig_path
-                        del self.trigg_path[-1]
-                        raise e from e
-
-                    # end of this event, remove from the trig_path
-                    del self.trigg_path[-1]
-                else:
-                    # loop in events
-                    pass
+eventManager = SingletonEventManager()
