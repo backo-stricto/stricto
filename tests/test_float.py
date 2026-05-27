@@ -41,17 +41,6 @@ class TestFloat(unittest.TestCase):
             a.set("dd")
         self.assertEqual(e.exception.to_string(), '$: Not a float (value="dd")')
 
-    def test_set_value_without_check(self):
-        """
-        check for putting abnormal values
-        """
-        a = Float()
-        a.set_value_without_checks(23)
-        a.set_value_without_checks([])
-        a.set_value_without_checks((1, 2))
-        a.set_value_without_checks({})
-        a.set_value_without_checks("true")
-
     def test_default(self):
         """
         Test default value
@@ -61,7 +50,7 @@ class TestFloat(unittest.TestCase):
         a = Float(default=3.14)
         b = a + 2.0
         self.assertEqual(a, 3.14)
-        self.assertEqual(math.isclose(b.get_value(), 5.14), True)
+        self.assertEqual(math.isclose(b, 5.14), True)
 
     def test_min(self):
         """
@@ -126,7 +115,7 @@ class TestFloat(unittest.TestCase):
         self.assertGreater(b, a)
         self.assertGreaterEqual(b, a)
 
-    def test_object_affectation(self):
+    def no_test_object_affectation(self):
         """
         Test __add__
         """

@@ -107,6 +107,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         options = Kparse(kwargs, KPARSE_MODEL, strict=True)
 
+        self._updating_process = False
         self._exists = options.get("exists")
 
         self._attribute_name = "$"
@@ -166,6 +167,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         # the  value is computed. Set the event "changed" for that
         auto_set = options.get("set")
+        self._auto_set = auto_set
 
         if auto_set is not None:
             function_to_call = (
@@ -191,8 +193,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         self._need_to_run_default_function = False
         if self._default is not None:
             if not callable(self._default):
-                self._value = self._default
-                self._old_value = self._default
+                self.set_default_value()
             else:
                 self._event_manager.register_event(
                     StrictoEvent(
@@ -467,6 +468,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :param src_object: the from object
         :type src_object: GenericType | None
         """
+
         if self.am_i_root() is True:
             if self._event_manager is None:
                 raise SSyntaxError("WTF no event manager for root {0}", type(self))
@@ -681,110 +683,73 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :rtype: Self
 
         """
-        b = self.get_value() + self._get_other_value(other)
-        r = self.__copy__()
-
-        r.set(b)
-        return r
+        return self.get_value() + self._get_other_value(other)
 
     def __sub__(self, other: Self | Any) -> Self:
         """
         sub two objects
         """
-        b = self.get_value() - self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() - self._get_other_value(other)
 
     def __mul__(self, other: Self | Any) -> Self:
         """
         mul two objects
         """
-        b = self._value * self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() * self._get_other_value(other)
 
     def __truediv__(self, other: Self | Any) -> Self:
         """
         div two objects
         """
-        b = self._value / self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() / self._get_other_value(other)
 
     def __floordiv__(self, other: Self | Any) -> Self:
         """
         floordiv two objects
         """
-        b = self._value // self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() // self._get_other_value(other)
 
     def __pow__(self, other: Self | Any) -> Self:
         """
         pow two objects
         """
-        b = self.get_value() ** self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() ** self._get_other_value(other)
 
     def __mod__(self, other: Self | Any) -> Self:
         """
         mod two objects
         """
-        b = self.get_value() % self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() % self._get_other_value(other)
 
     def __rshift__(self, other: Self | Any) -> Self:
         """
         __rshift__ two objects
         """
-        b = self.get_value() >> self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() >> self._get_other_value(other)
 
     def __lshift__(self, other: Self | Any) -> Self:
         """
         __lshift__ two objects
         """
-        b = self.get_value() << self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() << self._get_other_value(other)
 
     def __and__(self, other: Self | Any) -> Self:
         """
         __and__ two objects
         """
-        b = self.get_value() & self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() & self._get_other_value(other)
 
     def __or__(self, other: Self | Any) -> Self:
         """
         __or__ two objects
         """
-        b = self.get_value() | self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() | self._get_other_value(other)
 
     def __xor__(self, other: Self | Any) -> Self:
         """
         __xor__ two objects
         """
-        b = self.get_value() ^ self._get_other_value(other)
-        r = self.__copy__()
-        r.set(b)
-        return r
+        return self.get_value() ^ self._get_other_value(other)
 
     def __eq__(self, other: Self | Any) -> bool:
         """
@@ -849,6 +814,174 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         """
         return copy.copy(self)
 
+    def set_value(self, value: Any) -> bool:
+        """Set hardly the value
+
+        1. do the transform function
+        2. check the type
+        3. set the value
+
+        :return: True if has changed
+        :rtype: bool
+        """
+
+        corrected_value = value.get_value() if isinstance(value, GenericType) else value
+
+        if callable(self._transform):
+            corrected_value = self._transform(corrected_value, self.get_root())
+
+        if isinstance(corrected_value, str):
+            try:
+                corrected_value = self.__json_decode__(corrected_value)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                raise SError(e, self.path_name(), json=corrected_value) from e
+
+        # Check correct type or raise an Error
+        if corrected_value is not None:
+            self.check_type(corrected_value)
+
+        if corrected_value == self._value:
+            return False
+
+        self._value = corrected_value
+        return True
+
+    def set_default_value(self) -> bool:
+        """Set the default value
+
+        from the default= function or direct value
+
+        :return: True if changed
+        :rtype: bool
+        """
+
+        if self._value is not None:
+            return False
+
+        if self._default is None:
+            return False
+
+        default_value = None
+        if not callable(self._default):
+            default_value = self._default
+        else:
+            default_value = self._default(self.get_root())
+
+        # Check correct type or raise an Error
+        if default_value is not None:
+            self.check_type(default_value)
+
+        if default_value == self._value:
+            return False
+
+        self._value = default_value
+        return True
+
+    def compute_value(self) -> bool:
+        """compute the value if needed
+
+        :return: True if changed
+        :rtype: bool
+        """
+        if not callable(self._auto_set):
+            return False
+
+        value = self._auto_set(self.get_root())
+
+        # Check correct type or raise an Error
+        if value is not None:
+            self.check_type(value)
+
+        if value == self._value:
+            return False
+
+        self._value = value
+        return True
+
+    def start_record(self) -> None:
+        """
+        Record the value in case of Rollback
+        """
+        self._old_value = self._value
+
+    def end_record(self) -> bool:
+        """
+        The process of update is OK
+        :return: True if changed
+        :rtype: bool
+        """
+
+        self._updating_process = False
+
+        # Nothing as change, nothing to do
+        if self._value == self._old_value:
+            return False
+        return True
+
+    def check_value(self) -> None:
+        """
+        Check of the value is compliant to contraints
+        or throw an error
+        """
+
+        # Cannot read
+        # if self.exists_or_can_read() is False:
+        #    raise SAttributeError("{0}: Locked", self.path_name())
+
+        # Cannot write
+        if self._value != self._old_value:
+            if self.can_modify() is False:
+                raise SRightError("{0}: cannot modify value", self.path_name())
+
+        if self._not_none is True and self._value is None:
+            raise SConstraintError(
+                '{0}: Cannot be empty "{value}"', self.path_name(), value=self._value
+            )
+
+        # Check constraints
+        self.check_constraints(self._value)
+
+    def trigg_changements(self) -> None:
+        """Trig all changements"""
+        if self._value == self._old_value:
+            return
+
+        if self._on_change:
+            self._on_change(self._old_value, self.get_value(), self.get_root())
+
+    def new_set(self, value: Any) -> None:
+        """Set function
+
+        :param value: the value to set
+        :type value: Any
+        :raises e: Exception in any cases or error
+        """
+        root = self.get_root()
+        my_id = id(self)
+
+        if root._updating_process is False:
+            root._updating_process = my_id
+            root.start_record()
+            root.set_default_value()
+
+        try:
+            self.set_value(value)
+            self.check_value()
+        except Exception as e:
+            root.rollback()
+            raise e from e
+
+        if root._updating_process == my_id:
+            try:
+                root.compute_value()
+                root.check_value()
+                root.trigg_changements()
+            except Exception as e:
+                root.rollback()
+                raise e from e
+            root.end_record()
+
+
     def set(self, value: Any) -> None:
         """
         Fill with a value or raise an Error if not valid
@@ -859,23 +992,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :raises SAttributeError: try to modify an non existing object
 
         """
-
-        if self.exists_or_can_read() is False:
-            raise SAttributeError("{0}: Locked", self.path_name())
-
-        root = self.get_root()
-
-        corrected_value = (
-            value.get_value()
-            if type(value) == type(self)  # pylint: disable=unidiomatic-typecheck
-            else value
-        )
-
-        if callable(self._transform):
-            corrected_value = self._transform(corrected_value, root)
-        self.check(corrected_value)
-
-        self.set_value_without_checks(corrected_value, True)
+        return self.new_set(value)
 
     def patch_internal(self, op: str, value) -> None:
         """
@@ -1016,6 +1133,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         """
         self.__dict__["_value"] = self._old_value
+        self._updating_process = False
 
     def __repr__(self):
         return self.get_value().__repr__()

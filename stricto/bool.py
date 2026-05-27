@@ -43,5 +43,3 @@ class Bool(GenericType):
         """
 
         GenericType.check_constraints(self, value)
-
-        return True

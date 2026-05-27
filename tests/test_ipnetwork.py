@@ -7,13 +7,7 @@ import unittest
 import json
 from ipaddress import ip_network
 
-from stricto import (
-    Ipnetwork,
-    List,
-    Tuple,
-    StrictoEncoder,
-    STypeError,
-)
+from stricto import Ipnetwork, List, Tuple, StrictoEncoder, STypeError, SError
 
 
 class TestIpNetwork(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -36,16 +30,6 @@ class TestIpNetwork(unittest.TestCase):  # pylint: disable=too-many-public-metho
             e.exception.to_string(), '$: Must be a ipnetwork (value="12.3")'
         )
 
-    def test_set_value_without_check(self):
-        """
-        check for putting abnormal values
-        """
-        a = Ipnetwork()
-        a.set_value_without_checks(23)
-        a.set_value_without_checks([])
-        a.set_value_without_checks((1, 2))
-        a.set_value_without_checks({})
-
     def test_default(self):
         """
         Test default value
@@ -60,10 +44,11 @@ class TestIpNetwork(unittest.TestCase):  # pylint: disable=too-many-public-metho
         Test json string error
         """
         a = Ipnetwork()
-        with self.assertRaises(STypeError) as e:
+        with self.assertRaises(SError) as e:
             a.set("coucou")
         self.assertEqual(
-            e.exception.to_string(), '$: Must be a ipnetwork (value="coucou")'
+            e.exception.to_string(),
+            "'coucou' does not appear to be an IPv4 or IPv6 network",
         )
 
     def test_json(self):

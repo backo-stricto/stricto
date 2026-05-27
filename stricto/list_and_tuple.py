@@ -1,7 +1,9 @@
 """Module providing the List() Class"""
 
 import copy
+from typing import Any
 from .generic import GenericType, ViewType
+from .error import SError, SAttributeError
 
 
 class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
@@ -110,3 +112,187 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         #     if len(result) == 0:
         #        return (ViewType.NO, None) if final is False else None
         return (ViewType.YES, result) if final is False else result
+
+    def start_record(self) -> None:
+        """
+        Record the value in case of Rollback
+        overwrite GenericType.start_record
+        """
+        self._old_value = self._value
+        if self._value is None:
+            return
+
+        for v in self._value:
+            if v is None:
+                continue
+            v.start_record()
+
+    def end_record(self) -> bool:
+        """
+        The process of update is OK
+        :return: True if changed
+        :rtype: bool
+        """
+        self._updating_process = False
+        if self._value is None:
+            return False
+
+        for v in self._value:
+            if v is None:
+                continue
+            c = v.end_record()
+            if c is True:
+                return True
+        return False
+
+    def rollback(self) -> None:
+        """
+        reset to the old value
+        """
+        self._updating_process = False
+        self._value = self._old_value
+
+        if self._value is None:
+            return
+
+        for v in self._value:
+            if v is None:
+                continue
+            v.rollback()
+
+    def check_value(self) -> None:
+        """
+        Check of the value is compliant to contraints
+        or throw an error
+        """
+
+        # Cannot read
+        if self.exists_or_can_read() is False:
+            raise SAttributeError("{0}: Locked", self.path_name())
+
+        if isinstance(self._value, list):
+            for v in self._value:
+                if v.exists_or_can_read() is not False:
+                    v.check_value()
+
+        # Check constraints
+        self.check_constraints(self.get_value())
+
+    def set_default_value(self) -> bool:
+        """Set the default value
+
+        from the default= function or direct value
+
+        :return: True if changed
+        :rtype: bool
+        """
+        changed = False
+
+        # There is a default for this List or Tuple.
+        if self._default is not None:
+
+            default_value = None
+            if not callable(self._default):
+                default_value = self._default
+            else:
+                default_value = self._default(self.get_root())
+
+            # Check correct type or raise an Error
+            if default_value is not None:
+                self.check_type(default_value)
+
+                self._value = []
+                index = 0
+                for val in default_value:
+                    v = self._set_element_value(val, index) #pylint: disable=assignment-from-none
+                    self._value.append(v)
+                    index = index + 1
+                    changed = True
+
+        # Set childs defaults
+        if self._value is not None:
+            for v in self._value:
+                if v is None:
+                    continue
+                c = v.set_default_value()
+                if c is True:
+                    changed = True
+        return changed
+
+    def compute_value(self) -> bool:
+        """compute the value if needed
+
+        :return: True if changed
+        :rtype: bool
+        """
+        changed = False
+
+        if callable(self._auto_set):
+            value = self._auto_set(self.get_root())
+
+            if value is not None:
+                self.check_type(value)
+
+                self._value = []
+                index = 0
+                for val in value:
+                    v = self._set_element_value(val, index)  #pylint: disable=assignment-from-none
+                    self._value.append(v)
+                    index = index + 1
+                    changed = True
+
+        # compute defaults for childs
+        if self._value is not None:
+            for v in self._value:
+                if v is None:
+                    continue
+                c = v.compute_value()
+                if c is True:
+                    changed = True
+        return changed
+
+    def _set_element_value(self, value: Any, index: int = 0) -> GenericType: #pylint: disable=unused-argument
+        """
+        Set an element From model
+        
+        must be overwritten
+        """
+        return None
+
+    def set_value(self, value: Any) -> bool:
+        """Set hardly the value
+
+        1. do the transform function
+        2. check the type
+        3. set the value
+
+        :return: True if has changed
+        :rtype: bool
+        """
+
+        corrected_value = value.get_value() if isinstance(value, GenericType) else value
+
+        if callable(self._transform):
+            corrected_value = self._transform(corrected_value, self.get_root())
+
+        if isinstance(corrected_value, str):
+            try:
+                corrected_value = self.__json_decode__(corrected_value)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                raise SError(e, self.path_name(), json=corrected_value) from e
+
+        # Check correct type or raise an Error
+        if corrected_value is not None:
+            self.check_type(corrected_value)
+
+        changed = False
+        self._value = []
+        index = 0
+        if corrected_value is not None:
+            for val in corrected_value:
+                v = self._set_element_value(val, index)  #pylint: disable=assignment-from-none
+                self._value.append(v)
+                index = index + 1
+                changed = True
+
+        return changed

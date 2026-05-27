@@ -13,13 +13,18 @@ class TestBool(unittest.TestCase):
     Tres Bool()
     """
 
+    def newset(self):
+        """new set"""
+        a = Bool()
+        a.new_set(True)
+
     def test_error_type(self):
         """
         Test error type
         """
         a = Bool()
         with self.assertRaises(STypeError) as e:
-            a.set(12.3)
+            a.new_set(12.3)
         self.assertEqual(e.exception.to_string(), '$: Not a bool "12.3"')
 
     def test_default(self):
@@ -36,7 +41,7 @@ class TestBool(unittest.TestCase):
         """
         a = Bool(default=True)
         self.assertEqual(a, True)
-        a.set(False)
+        a.new_set(False)
         self.assertEqual(a, False)
         a.rollback()
         self.assertEqual(a, True)
@@ -49,17 +54,6 @@ class TestBool(unittest.TestCase):
         self.assertEqual(a, True)
         a.set(not a)
         self.assertEqual(a, False)
-
-    def test_set_value_without_check(self):
-        """
-        check for putting abnormal values
-        """
-        a = Bool()
-        a.set_value_without_checks(23)
-        a.set_value_without_checks([])
-        a.set_value_without_checks((1, 2))
-        a.set_value_without_checks({})
-        a.set_value_without_checks("true")
 
     def test_not_null(self):
         """

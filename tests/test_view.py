@@ -3,7 +3,7 @@
 test for views()
 """
 
-# pylint: disable=no-member
+# pylint: disable=no-member, duplicate-code, pointless-statement
 import unittest
 
 from stricto import String, Int, Dict, List, Tuple

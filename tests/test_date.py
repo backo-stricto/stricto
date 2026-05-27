@@ -54,16 +54,6 @@ class TestDate(unittest.TestCase):  # pylint: disable=too-many-public-methods
             e.exception.to_string(), '$: Must be a datetime (value="12.3")'
         )
 
-    def test_set_value_without_check(self):
-        """
-        check for putting abnormal values
-        """
-        a = Datetime()
-        a.set_value_without_checks(23)
-        a.set_value_without_checks([])
-        a.set_value_without_checks((1, 2))
-        a.set_value_without_checks({})
-
     def test_default(self):
         """
         Test default value

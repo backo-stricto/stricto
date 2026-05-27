@@ -1,8 +1,9 @@
 """Module providing the Dict() Class"""
 
 import copy
+from typing import Any
 from .generic import GenericType, ViewType
-from .error import SSyntaxError, STypeError, SAttributeError
+from .error import SSyntaxError, STypeError, SAttributeError, SError
 from .selector import Selector
 from .toolbox import validation_parameters
 
@@ -22,6 +23,7 @@ class Dict(GenericType):
         :type schema: dict
         :raises SSyntaxError: If some error
         """
+        self.__dict__["_locked"] = False
 
         GenericType.__init__(self, **kwargs)
         self._keys = []
@@ -49,7 +51,7 @@ class Dict(GenericType):
             setattr(self, key, mm)
             self._keys.append(key)
 
-        self._locked = True
+        self.__dict__["_locked"] = True
 
     @validation_parameters
     def add_to_model(self, key: str, model) -> None:
@@ -191,23 +193,27 @@ class Dict(GenericType):
                 raise SAttributeError(
                     '{0}: "Dict" object has no attribute "{k}"', self.path_name(), k=k
                 )
-
-            # a reference
-            if type(value) == type(v):  # pylint: disable=unidiomatic-typecheck
-                v.check(value)
-                self.__dict__[k] = value
-            else:
-                v.set(self._get_other_value(value))
+            v.set(value)
             return
 
-        if k in ["root", "_parent", "_attribute_name", "_event_manager", "_default"]:
+        if k in [
+            "root",
+            "_parent",
+            "_attribute_name",
+            "_event_manager",
+            "_default",
+            "_old_value",
+            "_updating_process",
+        ]:
             self.__dict__[k] = value
             return
 
-        try:
-            locked = object.__getattribute__(self, "_locked")
-        except AttributeError:
-            locked = False
+        locked = self.__dict__["_locked"]
+
+        # try:
+        #     locked = object.__getattribute__(self, "_locked")
+        # except AttributeError:
+        #     locked = False
 
         if locked is True:
             raise SAttributeError('{0}: Key "{k}" locked', self.path_name(), k=k)
@@ -231,6 +237,7 @@ class Dict(GenericType):
             d = []
 
         obj = object.__getattribute__(self, k)
+
         if k in d:
             if obj.exists_or_can_read() is False:
                 raise SAttributeError(
@@ -256,7 +263,7 @@ class Dict(GenericType):
             result.__dict__[key]._parent = result
             result.__dict__[key]._attribute_name = key
 
-        result._locked = True
+        result._locked = True # pylint: disable=attribute-defined-outside-init
         return result
 
     def __repr__(self):
@@ -402,21 +409,13 @@ class Dict(GenericType):
             a[key] = v.get_encoded()
         return a
 
-    def rollback(self):
-        """
-        reset to the old value
-        """
-        for key in self._keys:
-            v = object.__getattribute__(self, key)
-            v.rollback()
-
     def get_old_value(self):
         """
         Return the previous version of values
         """
         a = {}
         for key in self._keys:
-            v = object.__getattribute__(self, key)
+            v = self.__dict__[key]
             if v.exists_or_can_read() is False:
                 continue
             a[key] = v.get_old_value()
@@ -496,14 +495,189 @@ class Dict(GenericType):
         for key in self._keys:
             if key in value:
                 v = value.get(key)
-                c = self.__dict__[key].set_value_without_checks(v, trigg_change_event)
-                if c is True:
-                    changed = True
+                if self.__dict__[key].exists_or_can_read():
+                    c = self.__dict__[key].set_value_without_checks(
+                        v, trigg_change_event
+                    )
+                    if c is True:
+                        changed = True
+                else:
+                    raise SAttributeError("{0}: Locked", self.__dict__[key].path_name())
 
         if trigg_change_event is True and changed is True:
             self._trigg_change_event()
 
         return changed
+
+    def start_record(self) -> None:
+        """
+        Record the value in case of Rollback
+        overwrite GenericType.start_record
+        """
+        for key in self._keys:
+            v = self.__dict__[key]
+            if v is None:
+                continue
+            v.start_record()
+
+    def end_record(self) -> bool:
+        """
+        The process of update is OK
+        :return: True if changed
+        :rtype: bool
+        """
+        self._updating_process = False
+        for key in self._keys:
+            v = self.__dict__[key]
+            if v is None:
+                continue
+            c = v.end_record()
+            if c is True:
+                return True
+        return False
+
+    def rollback(self):
+        """
+        reset to the old value
+        """
+        self._updating_process = False
+        for key in self._keys:
+            v = self.__dict__[key]
+            v.rollback()
+
+    def set_default_value(self) -> bool:
+        """Set the default value
+
+        from the default= function or direct value
+
+        :return: True if changed
+        :rtype: bool
+        """
+        changed = False
+
+        # There is a default for this Dict.
+        if self._default is not None:
+            default_value = None
+            if not callable(self._default):
+                default_value = self._default
+            else:
+                default_value = self._default(self.get_root())
+
+            # Check correct type or raise an Error
+            if default_value is not None:
+                self.check_type(default_value)
+
+                for key in self._keys:
+                    if key in default_value:
+                        v = self.__dict__[key]
+                        c = v.set_value(default_value[key])
+                        if c is True:
+                            changed = True
+
+        # Set childs defaults
+        for key in self._keys:
+            v = self.__dict__[key]
+            if v is None:
+                continue
+            c = v.set_default_value()
+            if c is True:
+                changed = True
+        return changed
+
+    def compute_value(self) -> bool:
+        """compute the value if needed
+
+        :return: True if changed
+        :rtype: bool
+        """
+        changed = False
+
+        if callable(self._auto_set):
+            value = self._auto_set(self.get_root())
+
+            if value is not None:
+                self.check_type(value)
+
+                for key in self._keys:
+                    if key in value:
+                        v = self.__dict__[key]
+                        c = v.set_value(value[key])
+                        if c is True:
+                            changed = True
+
+        # Set childs defaults
+        for key in self._keys:
+            v = self.__dict__[key]
+            if v is None:
+                continue
+            c = v.compute_value()
+            if c is True:
+                changed = True
+        return changed
+
+    def set_value(self, value: Any) -> bool:
+        """Set hardly the value
+
+        1. do the transform function
+        2. check the type
+        3. set the value
+
+        :return: True if has changed
+        :rtype: bool
+        """
+
+        corrected_value = value.get_value() if isinstance(value, GenericType) else value
+
+        if callable(self._transform):
+            corrected_value = self._transform(corrected_value, self.get_root())
+
+        if isinstance(corrected_value, str):
+            try:
+                corrected_value = self.__json_decode__(corrected_value)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                raise SError(e, self.path_name(), json=corrected_value) from e
+
+        # Check correct type or raise an Error
+        if corrected_value is None:
+            return False
+
+        self.check_type(corrected_value)
+
+        changed = False
+        for key in self._keys:
+            if key in corrected_value:
+                v = self.__dict__[key]
+
+                c = v.set_value(corrected_value[key])
+                if c is True:
+                    changed = True
+
+        # rais an error if k is not in list af available keys
+        for key in corrected_value:
+            if key not in self._keys:
+                raise SAttributeError(
+                    '{0}: Dict object has no attribute "{k}"', self.path_name(), k=key
+                )
+
+        return changed
+
+    def check_value(self) -> None:
+        """
+        Check of the value is compliant to contraints
+        or throw an error
+        """
+
+        # Cannot read
+        if self.exists_or_can_read() is False:
+            raise SAttributeError("{0}: Locked", self.path_name())
+
+        for key in self._keys:
+            v = self.__dict__[key]
+            if v.exists_or_can_read() is not False:
+                v.check_value()
+
+        # Check constraints
+        self.check_constraints(self.get_value())
 
     def check(self, value) -> None:
         GenericType.check(self, value)

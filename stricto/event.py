@@ -73,13 +73,18 @@ class StrictoEvent:
         :type root: Generic
         """
 
-        self.function(self.listen_event_name, root, self.me, **kwargs)
+        remapped_me = root.select(self.me.path_name())
+        if remapped_me is None:
+            return
+
+        self.function(self.listen_event_name, root, remapped_me, **kwargs)
 
 
 class EventManager:
     """Events manager for a root object"""
 
     _events = {}
+    trigg_path = []
 
     def __init__(self, root: Any):
         self._root = root
@@ -91,6 +96,7 @@ class EventManager:
         result = cls.__new__(cls)
         result._events = {}
         result._root = self._root
+        result.trigg_path = self.trigg_path
         # copy all events
         result._events = copy.copy(self._events)
         return result
@@ -148,6 +154,7 @@ class EventManager:
         :param origin_path: the origin path who trigg the event
         :type origin_path: str
         """
+
         if event_name not in self._events:
             return
 

@@ -2,6 +2,7 @@
 
 import copy
 import re
+from typing import Any
 from .generic import GenericType
 from .list import List
 from .list_and_tuple import ListAndTuple
@@ -54,6 +55,18 @@ class Tuple(ListAndTuple):
             result._schema.append(new_sub)
             i = i + 1
         return result
+
+    def _set_element_value(self, value: Any, index: int = 0) -> GenericType:
+        """Set an element From model"""
+        if index >= len(self._schema):
+            raise STypeError("{0}: Tuple schema to short", self.path_name())
+
+        my_type = self._schema[index]
+        m = my_type.copy()
+        m._attribute_name = f"[{index}]"
+        m._parent = self
+        m.set_value(value)
+        return m
 
     def get_schema(self):
         """Return meta information for a float

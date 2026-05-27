@@ -1,4 +1,4 @@
-# pylint: disable=duplicate-code
+# pylint: disable=duplicate-code, global-variable-not-assigned, pointless-statement
 """
 test for Permissions()
 """
@@ -9,18 +9,15 @@ import unittest
 from stricto import String, Int, Dict, SRightError, SAttributeError
 
 
-increment = 0  # pylint: disable=invalid-name
+can_modify_flag = True  # pylint: disable=invalid-name
 
 
 def check_if_can_modify(value, root, other=None):  # pylint: disable=unused-argument
     """
     test
     """
-    global increment  # pylint: disable=global-statement
-    increment += 1
-    if increment > 1:
-        return False
-    return True
+    global can_modify_flag  # pylint: disable=global-statement
+    return can_modify_flag
 
 
 class TestRights(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -107,12 +104,13 @@ class TestRights(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         Test read only with function
         """
-        global increment  # pylint: disable=global-statement
-        increment = 0
+        global can_modify_flag  # pylint: disable=global-statement
+        can_modify_flag = True
         a = Int(default=10, can_modify=check_if_can_modify)
         a.enable_permissions()
         a.set(12)
         self.assertEqual(a, 12)
+        can_modify_flag = False
         with self.assertRaises(SRightError) as e:
             a.set(11)
         self.assertEqual(e.exception.to_string(), "$: cannot modify value")
@@ -129,9 +127,10 @@ class TestRights(unittest.TestCase):  # pylint: disable=too-many-public-methods
         )
 
         a.enable_permissions()
+        a.set({"b": 1, "c": "test"})
         with self.assertRaises(SAttributeError) as e:
-            a.set({"b": 1, "c": "test"})
-        self.assertEqual(e.exception.to_string(), "$.c: Locked")
+            print(a.c)
+        self.assertEqual(e.exception.to_string(), '$: Dict object has no attribute "c"')
 
         with self.assertRaises(SAttributeError) as e:
             self.assertEqual(a.c, "toto")
