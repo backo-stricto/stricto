@@ -477,23 +477,6 @@ class List(
         # Trigg event "change" to say there is some changements
         self._trigg_change_event()
 
-    def check(self, value) -> None:
-        GenericType.check(self, value)
-
-        # check all values
-        if isinstance(value, list):
-            i = 0
-            for v in value:
-                self._type.check(v)
-                i = i + 1
-            return
-
-        if isinstance(value, List):
-            i = 0
-            for v in value:
-                self._type.check(v.get_value())
-                i = i + 1
-
     def get_value(self):
         """
         @overwrite GenericType.get_value()

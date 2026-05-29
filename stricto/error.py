@@ -6,19 +6,23 @@ from copy import deepcopy
 
 
 class StrictoError:
-    """Stricto Error main object
+    """
+    Stricto Error main object
 
-    :param self: Description
-    :param string_format: The string for the error Message
-    :type string_format: str
-    :param args: arguments for the string format
-    :type args: object
-    :param kwargs: arguments as kwargs for the string format
-    :type kwargs: object
+    used for futur internationalisation of Error messages
     """
 
     def __init__(self, string_format: str, *args: object, **kwargs: object) -> None:
-        """Constructor"""
+        """
+        :param string_format: The string for the error Message
+        :type string_format: str
+        :param args: arguments for the string format
+        :type args: object
+
+        :param kwargs: arguments as kwargs for the string format
+        :type kwargs: object
+
+        """
         self.string_format = string_format
 
         self._my_kwargs = kwargs
@@ -34,7 +38,6 @@ class StrictoError:
         """
         Return the object as a string
 
-        :param self: Description
         :return: a string
         :rtype: str
         """

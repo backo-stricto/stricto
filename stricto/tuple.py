@@ -251,21 +251,6 @@ class Tuple(ListAndTuple):
             return None
         return v[index]
 
-    def check(self, value) -> None:
-        GenericType.check(self, value)
-
-        if isinstance(value, (tuple, Tuple, list, List)):
-            if len(value) != len(self):
-                raise STypeError(
-                    '{0}: Tuple not same size ("{value}")',
-                    self.path_name(),
-                    value=value,
-                )
-            i = 0
-            for element in value:
-                self._schema[i].check(element)
-                i = i + 1
-
     def check_type(self, value):
         """
         check if conplain to model or raise an

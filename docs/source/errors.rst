@@ -9,7 +9,7 @@ Errors
 .. automodule:: stricto
    :show-inheritance:
    :no-index:
-   
+
 .. autoclass:: StrictoError
    :members:
    :show-inheritance: 

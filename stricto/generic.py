@@ -68,35 +68,51 @@ KPARSE_MODEL = {
 
 class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """Generic Type
+
     This is the main Object for Int, Float, String, ...
 
-    :param ``**kwargs``:
-        - *constraint=* ``func`` --
-          a function to check if the value is admissible
-        - *constraints=* ``[func]`` --
-          a list of function to check if the value is admissible
-        - *default=* ``Any`` --
-          default value
-        - *description=* ``str`` --
-          a description of this field (like a comment)
-        - *exists=* ``bool|func`` --
-          answer if this field exists or not
-        - *in=* ``[Any]`` --
-          a list of available values
-        - *require=* ``bool`` --
-          if this field cannot be None
-        - *onChange=* ``func`` --
-          A function to trig when the value change
-        - *set=* ``func`` --
-          a compute value
-        - *transform=* ``func`` --
-          a function to modify the value BEFORE affectation
-        - *views=* ``[str]`` --
-          list of views Access-list
     """
 
     def __init__(self, **kwargs):
-        """Constructor method"""
+        """
+
+        :param kwargs: arguments as kwargs for the string format
+        :type kwargs: object
+
+        :keyword constraint: a function to check if the value is admissible
+        :type constraint: Callable
+
+        :keyword constraints: a list of function to check if the value is admissible
+        :type constraints: list[ Callable ]
+
+        :keyword default: A default value or function
+        :type default: Any | Callable
+
+        :keyword description: a description of this field (like a comment)
+        :type description: str
+
+        :keyword exists: answer if this field exists or not
+        :type exists: bool|Callable
+
+        :keyword in: a list of available values
+        :type in: list[ Any ]
+
+        :keyword require: if this field cannot be None
+        :type require: bool|Callable
+
+        :keyword onChange: A function to trig when the value change
+        :type onChange: Callable
+
+        :keyword set: a compute value
+        :type set: Callable
+
+        :keyword transform: a function to modify the value BEFORE affectation
+        :type transform: Callable
+
+        :keyword view: list of views Access-list
+        :type view: list[ str ]
+
+        """
 
         self._permissions = Permissions()
         """Permission object
@@ -162,7 +178,8 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             self.set_default_value()
 
     def get_childs(self) -> list[Self]:
-        """Return the list of child of this object
+        """
+        Return the list of child of this object
 
         :return: the list of child of this object
         :rtype: list[GenericType]
@@ -170,9 +187,10 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         return []
 
     def is_none(self) -> bool:
-        """Return True if the value is None
+        """
+        Return True if the value is None
+        used differently when it is a dict, List or Tuple
 
-        used differently when it is a dict
         :return: True if the value is None
         :rtype: bool
         """
@@ -187,21 +205,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         set permissions to off
         """
         self._permissions.disable()
-
-    def _set_default(self) -> None:
-        """
-        Set the default value
-        used at initialisation and each copy.
-        """
-
-    def _wrap_recheck_value(self) -> None:
-        """
-        called by event "change" (another value as changed in the object)
-        Re-check the value because constraint can be dependant on the changed value.
-
-        :meta private:
-        """
-        self.check(self.get_value())
 
     def is_allowed_to(self, right_name: str) -> bool:
         """
@@ -415,20 +418,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         # my_view is ViewType.EXPLICIT_UNKNOWN:
         return (ViewType.NO, None) if final is False else None
-
-    def _change_trigg_wrap(self, root, auto_set: Callable, **kwargs) -> None:
-        """
-        transform a set=... option to an event.
-        this function is called by the event and call the set function.
-
-        :param self: Description
-        :param root: the root object
-        :param auto_set: the function
-
-        :meta private:
-        """
-        a = auto_set(root, **kwargs)
-        self.set(a)
 
     @validation_parameters
     def trigg(self, event_name: str, **kwargs) -> None:
@@ -757,9 +746,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         result._event_id = EVENT_MANAGER.generate_uniq_id()
 
         EVENT_MANAGER.copy_object_id(self._event_id, result._event_id)
-        # Trigg the "copied" event (used by default)
-        # if self.am_i_root():
-        #     self.trigg("copied", self)
 
         return result
 
@@ -775,11 +761,14 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         return copy.copy(self)
 
     def set_value(self, value: Any) -> bool:
-        """Set hardly the value
+        """
+        Set the value without any test or verification, and return True or False if there is any changement.
 
         1. do the transform function
-        2. check the type
-        3. set the value
+        2. set the value
+
+        :param value: the new value
+        :type value: Anu
 
         :return: True if has changed
         :rtype: bool
@@ -807,9 +796,8 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         return True
 
     def set_default_value(self) -> bool:
-        """Set the default value
-
-        from the default= function or direct value
+        """
+        Set the default value from the default= and return True or False if there is any changement.
 
         :return: True if changed
         :rtype: bool
@@ -838,7 +826,10 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         return True
 
     def compute_value(self) -> bool:
-        """compute the value if needed
+        """
+        compute the value if needed
+
+        if the value is with set= ... compute the value and return True or False if there is any changement.
 
         :return: True if changed
         :rtype: bool
@@ -862,12 +853,15 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
     def start_record(self) -> None:
         """
         Record the value in case of Rollback
+
+        used in case of Error in the process
         """
         self._old_value = self._value
 
     def end_record(self) -> bool:
         """
-        The process of update is OK
+        The process of update is OK. close the process and return True or False if there is any changement.
+
         :return: True if changed
         :rtype: bool
         """
@@ -881,7 +875,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
     def check_value(self) -> None:
         """
-        Check of the value is compliant to contraints
+        Check of the value is compliant to type and contraints
         or throw an error
         """
 
@@ -905,21 +899,13 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # Check constraints
         self.check_constraints(self._value)
 
-    def release_events(self) -> None:
-        """
-        Release all avents trigged during set operations
-        """
-
-        if self._value == self._old_value:
-            return
-
-        if self._on_change:
-            self._on_change(self._old_value, self.get_value(), self.get_root())
-
     def set(self, value: Any) -> None:
-        """Set function
+        """
+        Set the new value
 
-        :param value: the value to set
+        This function set the new value, recompute any other value of the object, check contraints or throw errors, trigg events...
+
+        :param value: the new value
         :type value: Any
         :raises e: Exception in any cases or error
         """
@@ -1084,31 +1070,36 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         root = self.get_root()
 
-        if self.can_read() is False:
-            raise SRightError("{0}: Cannot read value", self.path_name())
+        if root._updating_process is False:
+            root._updating_process = self._event_id
+            root.start_record()
+            root.set_default_value()
 
-        # transform the value before the check
-        corrected_value = value
-        if callable(self._transform):
-            corrected_value = self._transform(value, root)
+        try:
+            self.set_value(value)
+        except Exception as e:
+            root.rollback()
+            raise e from e
 
-        # handle the None value
-        if corrected_value is None:
-            if self._not_none is True:
-                raise SConstraintError(
-                    '{0}: Cannot be empty "{value}"', self.path_name(), value=value
-                )
-            return
+        if root._updating_process == self._event_id:
+            changed_while_recompute = True
+            num_of_compute_value = 0
+            while changed_while_recompute is True:
+                try:
+                    changed_while_recompute = root.compute_value()
+                    root.check_value()
+                except Exception as e:
+                    root.rollback()
+                    raise e from e
 
-        # Check correct type or raise an Error
-        self.check_type(corrected_value)
+                num_of_compute_value += 1
+                if num_of_compute_value > 10:
+                    root.rollback()
+                    raise SSyntaxError(
+                        f"{self.path_name()} too much reccursion in compute value."
+                    )
 
-        if self.can_modify() is False:
-            if corrected_value != self.get_value():
-                raise SRightError("{0}: cannot modify value", self.path_name())
-
-        # check constraints or raise an Error
-        self.check_constraints(corrected_value)
+            root.rollback()
 
     def __getattr__(self, k):
         """
@@ -1240,6 +1231,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                     constraint=constraint,
                 )
             root = self.get_root()
+
             r = constraint(value, root)
             if r is False:
                 raise SConstraintError(

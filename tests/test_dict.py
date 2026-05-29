@@ -899,8 +899,20 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(d.a, None)
         self.assertEqual(d.b, None)
 
-        self.assertEqual(d.check({"a": 4}), None)
-        self.assertEqual(d.a.check(4), None)
+        with self.assertRaises(TypeError) as e:
+            self.assertEqual(d.a.check(4), None)
+        self.assertEqual(
+            e.exception.args[0],
+            "'<' not supported between instances of 'int' and 'NoneType'",
+        )
+
+        with self.assertRaises(TypeError) as e:
+            self.assertEqual(d.check({"a": 4}), None)
+        self.assertEqual(
+            e.exception.args[0],
+            "'<' not supported between instances of 'int' and 'NoneType'",
+        )
+
         with self.assertRaises(STypeError) as e:
             d.a.check("hello")
         self.assertEqual(e.exception.to_string(), '$.a: Must be a int ("hello")')

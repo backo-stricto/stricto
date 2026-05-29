@@ -647,7 +647,6 @@ user.dice1.trigg('roll') -> trigg random() on $.dice3
 user.dice2.trigg('roll') -> trigg random() on $.dice4
 user.dice3.trigg('roll') -> trigg random() on $.dice4
 
-
 ```
 
 ### bundled events

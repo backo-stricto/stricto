@@ -664,38 +664,6 @@ class Dict(GenericType):
         # Check constraints
         self.check_constraints(self.get_value())
 
-    def check(self, value) -> None:
-        GenericType.check(self, value)
-
-        # check reccursively subtypes
-        if isinstance(value, dict):
-            for key in self._keys:
-                key_object = self.__dict__[key]
-                if key_object.exists_or_can_read() is False:
-                    continue
-                if key not in value:
-                    continue
-                sub_value = value.get(key)
-                key_object.check(sub_value)
-
-            # check if a non-described value
-            for key in value:
-                if key not in self._keys:
-                    raise SAttributeError(
-                        '{0}: Unknown key "{key}"', self.path_name(), key=key
-                    )
-            return
-
-        if isinstance(value, Dict):
-            for key in self._keys:
-                key_object = self.__dict__[key]
-                # if key_object.exists_or_can_read() is False:
-                #    continue
-
-                sub_value = value.get(key).get_value()
-                key_object.check(sub_value)
-            return
-
     def check_type(self, value):
         """
         check if conplain to model or raise an
