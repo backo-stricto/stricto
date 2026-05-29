@@ -104,6 +104,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         self._parent: Self = None
         """parent is a reference to the parent :py:class:`GenericType`
         """
+        self._event_id = EVENT_MANAGER.generate_uniq_id()
 
         options = Kparse(kwargs, KPARSE_MODEL, strict=True)
 
@@ -753,8 +754,9 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         result._parent = self._parent
         result._attribute_name = self._attribute_name
         result._default = self._default
+        result._event_id = EVENT_MANAGER.generate_uniq_id()
 
-        EVENT_MANAGER.copy_object_id(id(self), id(result))
+        EVENT_MANAGER.copy_object_id(self._event_id, result._event_id)
         # Trigg the "copied" event (used by default)
         # if self.am_i_root():
         #     self.trigg("copied", self)
@@ -795,8 +797,8 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 raise SError(e, self.path_name(), json=corrected_value) from e
 
         # Check correct type or raise an Error
-        if corrected_value is not None:
-            self.check_type(corrected_value)
+        # if corrected_value is not None:
+        #    self.check_type(corrected_value)
 
         if corrected_value == self._value:
             return False
@@ -897,6 +899,9 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 '{0}: Cannot be empty "{value}"', self.path_name(), value=self._value
             )
 
+        if self._value is not None:
+            self.check_type(self._value)
+
         # Check constraints
         self.check_constraints(self._value)
 
@@ -919,12 +924,11 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :raises e: Exception in any cases or error
         """
         root = self.get_root()
-        my_id = id(self)
 
         changed = False
 
         if root._updating_process is False:
-            root._updating_process = my_id
+            root._updating_process = self._event_id
             root.start_record()
             c = root.set_default_value()
             if c is True:
@@ -939,8 +943,9 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             root.rollback()
             raise e from e
 
-        if root._updating_process == my_id:
+        if root._updating_process == self._event_id:
             changed_while_recompute = True
+            num_of_compute_value = 0
             while changed_while_recompute is True:
                 try:
                     changed_while_recompute = root.compute_value()
@@ -950,6 +955,12 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 except Exception as e:
                     root.rollback()
                     raise e from e
+
+                num_of_compute_value += 1
+                if num_of_compute_value > 10:
+                    raise SSyntaxError(
+                        f"{self.path_name()} too much reccursion in compute value."
+                    )
 
             root.end_record()
 
@@ -1013,51 +1024,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             )
 
         return obj.patch_internal(op, value)
-
-    def set_value_without_checks(self, value: Any, trigg_change_event=False) -> bool:
-        """
-        Set the value without any check.
-        Please use carrefully and prefer :py:meth:`set`
-
-        :param self: Description
-        :param value: the value to set
-        :type value: Any
-
-        :raises SAttributeError: locked
-        :raises SError: json error
-
-        """
-        if self.exists_or_can_read() is False:
-            raise SAttributeError("{0}: Locked", self.path_name())
-
-        root = self.get_root()
-
-        # transform the value before the check
-        corrected_value = (
-            value.get_value()
-            if isinstance(value, GenericType)
-            else value  # pylint: disable=unidiomatic-typecheck
-        )
-
-        if isinstance(corrected_value, str):
-            try:
-                corrected_value = self.__json_decode__(corrected_value)
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                raise SError(e, self.path_name(), json=corrected_value) from e
-
-        if callable(self._transform):
-            corrected_value = self._transform(corrected_value, root)
-
-        self._old_value = self._value
-        self._value = corrected_value  # self._default if corrected_value is None else corrected_value
-
-        if self._old_value == self._value:
-            return False
-
-        if trigg_change_event is True:
-            self._trigg_change_event()
-
-        return True
 
     def _trigg_change_event(self):
         if callable(self._on_change):

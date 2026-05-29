@@ -1,7 +1,5 @@
 """Module providing the List() Class"""
 
-import copy
-
 from typing import Any
 from .generic import GenericType
 from .list_and_tuple import ListAndTuple
@@ -478,36 +476,6 @@ class List(
         self._value.extend(models)
         # Trigg event "change" to say there is some changements
         self._trigg_change_event()
-
-    def set_value_without_checks(self, value, trigg_change_event=False) -> bool:
-        """
-        @overwrite GenericType.set_value_without_checks
-        """
-
-        self._old_value = copy.copy(self._value)
-        changed = False
-
-        if not isinstance(value, (List, list)):
-            self._value = value
-            if self._value != self._old_value:
-                changed = True
-        else:
-            i = 0
-            self._value = []
-            for v in value:
-                model = self._type.copy()
-                model._parent = self
-                model._attribute_name = f"[{i}]"
-                c = model.set_value_without_checks(v, trigg_change_event)
-                self._value.append(model)
-                if c is True:
-                    changed = True
-                i = i + 1
-
-        if trigg_change_event is True and changed is True:
-            self._trigg_change_event()
-
-        return changed
 
     def check(self, value) -> None:
         GenericType.check(self, value)

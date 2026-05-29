@@ -251,34 +251,6 @@ class Tuple(ListAndTuple):
             return None
         return v[index]
 
-    def set_value_without_checks(self, value, trigg_change_event=False):
-
-        self._old_value = copy.copy(self._value)
-
-        changed = False
-
-        if not isinstance(value, (tuple, Tuple, list, List)):
-            self._value = value
-            changed = self._value == self._old_value
-        else:
-            self._value = []
-
-            i = 0
-            for element in value:
-                mm = copy.copy(self._schema[i])
-                c = mm.set_value_without_checks(element, trigg_change_event)
-                if c is True:
-                    changed = True
-                mm._parent = self
-                mm._attribute_name = f"[{i}]"
-                self._value.append(mm)
-                i = i + 1
-
-        if trigg_change_event is True and changed is True:
-            self._trigg_change_event()
-
-        return changed
-
     def check(self, value) -> None:
         GenericType.check(self, value)
 

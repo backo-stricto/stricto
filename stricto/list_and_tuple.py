@@ -182,6 +182,9 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         if self.exists_or_can_read() is False:
             raise SAttributeError("{0}: Locked", self.path_name())
 
+        if self._value is not None:
+            self.check_type(self._value)
+
         if isinstance(self._value, list):
             for v in self._value:
                 if v.exists_or_can_read() is not False:
@@ -199,6 +202,9 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         :rtype: bool
         """
         changed = False
+
+        if self._value is not None:
+            return False
 
         # There is a default for this List or Tuple.
         if self._default is not None:

@@ -58,10 +58,12 @@ class In(GenericType):
         if self.exists_or_can_read() is False:
             raise SAttributeError("{0}: Locked", self.path_name())
 
-        value = self.get_value()
+        if self._value is not None:
+            self.check_type(self._value)
+
         for model in self._models:
             try:
-                model.check_type(value)
+                model.check_type(self._value)
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
-            model.check_constraints(value)
+            model.check_constraints(self._value)

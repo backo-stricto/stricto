@@ -446,3 +446,15 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
         b = List(String(require=False), require=True, default=[".*"])
         b.copy()
         Dict({"b": List(String(require=False), default=[".*"])})
+
+    def test_list_dict(self):
+        """
+        Test list Dict
+        """
+        a = Dict({"aa": Int(), "bb": List(String())})
+        a.set({"aa": 1, "bb": ["titi"]})
+
+        a.aa = 1
+        self.assertEqual(repr(a.bb), "['titi']")
+        a.aa = 1
+        self.assertEqual(repr(a.bb), "['titi']")

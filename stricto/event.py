@@ -5,6 +5,7 @@ Module providing Event management
 import copy
 from typing import Callable, Any
 from .selector import Selector
+from .error import SSyntaxError
 from .toolbox import validation_parameters
 
 
@@ -92,6 +93,16 @@ class SingletonEventManager:
         Generator
         """
         self._events_per_object = {}
+        self.uniq_id = 0
+
+    def generate_uniq_id(self) -> int:
+        """Generate a uniq number for object to store events
+
+        :return: a new number
+        :rtype: int
+        """
+        self.uniq_id += 1
+        return self.uniq_id
 
     def register_event(
         self, me: Any, listen_event_name: str, function: Callable
@@ -102,11 +113,10 @@ class SingletonEventManager:
         :type event: StrictoEvent
         """
         # Create events per id
-        my_id = id(me)
-        if my_id not in self._events_per_object:
-            self._events_per_object[my_id] = {}
+        if me._event_id not in self._events_per_object:
+            self._events_per_object[me._event_id] = {}
 
-        events = self._events_per_object[my_id]
+        events = self._events_per_object[me._event_id]
 
         if listen_event_name not in events:
             events[listen_event_name] = []
@@ -118,9 +128,8 @@ class SingletonEventManager:
         :param me: me
         :type me: GenericType
         """
-        my_id = id(me)
-        if my_id in self._events_per_object:
-            del self._events_per_object[my_id]
+        if me._event_id in self._events_per_object:
+            del self._events_per_object[me._event_id]
 
     def copy_object_id(self, src_id: int, dst_id: int) -> None:
         """Copy event when an object is copied
@@ -132,6 +141,12 @@ class SingletonEventManager:
         """
         if src_id not in self._events_per_object:
             return
+
+        if src_id == dst_id:
+            raise SSyntaxError("Error copy _event_id event : same ids")
+
+        if dst_id in self._events_per_object:
+            raise SSyntaxError("Error copy _event_id event : already exists ")
 
         self._events_per_object[dst_id] = copy.copy(self._events_per_object[src_id])
 
@@ -150,10 +165,8 @@ class SingletonEventManager:
         :type src_object: Any
         """
 
-        my_id = id(me)
-
-        if my_id in self._events_per_object:
-            events = self._events_per_object[my_id]
+        if me._event_id in self._events_per_object:
+            events = self._events_per_object[me._event_id]
             if event_name in events:
                 for func in events[event_name]:
                     func(event_name, root, me, **kwargs)

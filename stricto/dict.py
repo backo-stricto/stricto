@@ -195,6 +195,7 @@ class Dict(GenericType):
             "root",
             "_parent",
             "_attribute_name",
+            "_event_id",
             "_default",
             "_old_value",
             "_updating_process",
@@ -202,12 +203,12 @@ class Dict(GenericType):
             self.__dict__[k] = value
             return
 
-        locked = self.__dict__["_locked"]
+        # locked = self.__dict__["_locked"]
 
-        # try:
-        #     locked = object.__getattribute__(self, "_locked")
-        # except AttributeError:
-        #     locked = False
+        try:
+            locked = object.__getattribute__(self, "_locked")
+        except AttributeError:
+            locked = False
 
         if locked is True:
             raise SAttributeError('{0}: Key "{k}" locked', self.path_name(), k=k)
@@ -489,29 +490,6 @@ class Dict(GenericType):
 
         return None
 
-    def set_value_without_checks(self, value, trigg_change_event=False) -> bool:
-        changed = False
-
-        if not isinstance(value, (dict, Dict)):
-            return False
-
-        for key in self._keys:
-            if key in value:
-                v = value.get(key)
-                if self.__dict__[key].exists_or_can_read():
-                    c = self.__dict__[key].set_value_without_checks(
-                        v, trigg_change_event
-                    )
-                    if c is True:
-                        changed = True
-                else:
-                    raise SAttributeError("{0}: Locked", self.__dict__[key].path_name())
-
-        if trigg_change_event is True and changed is True:
-            self._trigg_change_event()
-
-        return changed
-
     def start_record(self) -> None:
         """
         Record the value in case of Rollback
@@ -603,6 +581,7 @@ class Dict(GenericType):
                 self.check_type(value)
 
                 for key in self._keys:
+
                     if key in value:
                         v = self.__dict__[key]
                         c = v.set_value(value[key])
@@ -617,6 +596,7 @@ class Dict(GenericType):
             c = v.compute_value()
             if c is True:
                 changed = True
+
         return changed
 
     def set_value(self, value: Any) -> bool:
