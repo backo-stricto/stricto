@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.0] - 2026-06-01
+
+* Fix :
+* Feature : 
+  * default option can now have function
+* Internal (probably breaking change):
+  * Refactoring set() function and all internal process
+  * Refactoring check() function
+  * Refactoring event management (sources from event are actually ignored)
+
 ## [0.1.2] - 2026-04-28
 
 * Fix :

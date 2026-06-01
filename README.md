@@ -131,15 +131,12 @@ Commonly available options for any type are:
 | ```required=True\|False``` | False | Check whether the field must have a value. |
 | ```description="whatever you want"``` | None | Set a description for the item |
 | ```default=666\|func``` | None | set a default value |
-| ```in=[ 1, 2, 3, 5 ]\|func``` | None | Value must be in the list or pass the function check. |
-| ```union=[ 1, 2, 3, 5 ]\|func``` | None | Alias for ```in```  |
+| ```in\|enum\|union=[ 1, 2, 3, 5 ]\|func``` | None | Value must be in the list or pass the function check. |
 | ```transform=func``` | None | Set a [function](#functions) that [transforms](#transform) the value before assignment. |
 | ```constraint=func``` | None | Set a function to [check](#constraints) the value before asssignment. |
 | ```constraints=[func]``` | None | Same as above but for a list of [constraints](#constraints) |
 | ```onchange=func``` | None | set [onchange](#onchange) a function that will be trigged when the value change. |
-| ```onChange=func``` | None | Alias for ```onchange``` |
 | ```set=func``` | None | For read-only items ; set a function that will compute the value from others attributes. See [set or compute function](#set) |
-| ```compute=func``` | None | Alias for ```set``` |
 | ```exists=func``` | True | Set a function to check whether the object exists based on values from other attributes. See  [exists](#exists) for details |
 | ```can_read=func``` | True | Set a function to check whether the object is readable. see  [can_read](#can_read) for details |
 | ```can_modify=func``` | True | Set a function to check whether the object is changeable (read-only value). see  [can_modify](#can_modify) for details |
@@ -172,8 +169,6 @@ client = Dict{
 client.age = 12  # -> raise an error
 client.age = 120  # -> Ok
 
-newAge = client.age+1 # -> raise an Error ( > max ) newAge is implicitly an Int( min=21, max=120))
-newAge = 1+client.age # -> Ok (newAge is implicitly an int)
 ```
 
 ### String()
@@ -323,7 +318,7 @@ from stricto import Dict, Int, String
 
 a=Dict({
     "b" : Int( default = 0, set=lambda o: o.c+1 ),
-    "d" : Int( default = 0, set=(lambda o: o.b+1, '$.b') ), 
+    "d" : Int( default = 0, set=(lambda o: o.b+1) ), 
     "c" : Int( ),
 })
 
