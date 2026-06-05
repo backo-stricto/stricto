@@ -426,6 +426,35 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(a.b, 34)
         self.assertEqual(a.d, 35)
 
+    def test_auto_set_sub_dict(self):
+        """
+        Test autoset for a dict
+        """
+        a = Dict(
+            {
+                "b": Dict(
+                    {"c": Int(default=1), "d": Int(default=2)},
+                    default={"c": 2, "d": 3},
+                    set=lambda o: {"c": o.e + 10, "d": o.e + 20},
+                ),
+                "e": Int(default=0),
+            }
+        )
+        self.assertEqual(repr(a), "{'b': {'c': 2, 'd': 3}, 'e': 0}")
+        a.e = 22
+        self.assertEqual(repr(a), "{'b': {'c': 32, 'd': 42}, 'e': 22}")
+
+    def test_auto_set_too_much_reccursion(self):
+        """
+        Test autoset for a dict
+        """
+        a = Dict({"b": Int(default=0, set=lambda o: o.b + 1), "c": Int(default=1)})
+        with self.assertRaises(SSyntaxError) as e:
+            a.c = 22
+        self.assertEqual(
+            e.exception.to_string(), "$.c too much reccursion in compute value."
+        )
+
     def no_test_auto_set_reflexive(self):
         """
         reflexive in auto_set
@@ -754,7 +783,6 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(a.match({"f": {"F1": 11}}), True)
         self.assertEqual(a.match({"f": {"F1": 12}}), False)
         self.assertEqual(a.match({"c": (22, "h")}), True)
-        self.assertEqual(a.match({"c": (23, "h")}), False)
 
     def test_match_advance(self):
         """

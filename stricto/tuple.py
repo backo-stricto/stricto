@@ -228,22 +228,7 @@ class Tuple(ListAndTuple):
         """
         add two Tuples
         """
-        if not isinstance(other, Tuple):
-            raise STypeError(
-                "{0}: Can only concatenate Tuple to Tuple", self.path_name()
-            )
-
-        if self._get_other_value(other) is None:
-            raise STypeError(
-                "{0}: Can only concatenate Tuple to Tuple", self.path_name()
-            )
-
-        a = copy.copy(self._schema)
-        a.extend(other._schema)
-        r = Tuple(tuple(a))
-        v = GenericType.get_value(self)
-        r._value = v + GenericType.get_value(other)
-        return r
+        return self.get_value() + self._get_other_value(other)
 
     def __getitem__(self, index):
         v = GenericType.get_value(self)
@@ -255,16 +240,7 @@ class Tuple(ListAndTuple):
         """
         check if conplain to model or raise an
         """
-        if isinstance(value, tuple):
-            return True
-
-        if isinstance(value, Tuple):
-            return True
-
-        if isinstance(value, List):
-            return True
-
-        if isinstance(value, list):
+        if isinstance(value, (tuple, Tuple, list, List)):
             return True
 
         raise STypeError(

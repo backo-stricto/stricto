@@ -21,7 +21,7 @@ from .error import (
 from .permissions import Permissions
 from .selector import Selector
 from .event import EVENT_MANAGER
-from .toolbox import validation_parameters
+from .toolbox import validation_parameters, get_class_names_hierachie, get_content
 
 PREFIX = "MODEL_"
 
@@ -250,23 +250,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         """
         return value
 
-    def get_as_string(self, value: Any) -> str:
-        """
-        Return the value as a string
-        (used to build the schema structure (see :py:meth:`get_schema`)
-
-        :meta private:
-        """
-        if isinstance(value, list):
-            a = []
-            for i in value:
-                a.append(self.get_as_string(i))
-            # return f"[{', '.join(a)}]"
-            return a
-        if callable(value):
-            return "func"  # inspect.getsource(value)
-        return value
-
     def get_schema(self) -> dict:
         """
         Return a schema for this object
@@ -277,20 +260,17 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         Return a schema for this object
         """
-        ty = str(type(self))
-
         a = {
-            "type": ty,
-            "type_short": re.sub(r".*\.|'>", "", ty),
-            "description": self.get_as_string(self._description),
-            "required": self.get_as_string(self._not_none),
-            "in": self.get_as_string(self._union),
-            "constraints": self.get_as_string(self._constraints),
-            "default": self.get_as_string(self._default),
-            "transform": self.get_as_string(self._transform),
-            "exists": self.get_as_string(self._exists),
+            "types": get_class_names_hierachie(type(self)),
+            "description": get_content(self._description),
+            "required": get_content(self._not_none),
+            "union": get_content(self._union),
+            "constraints": get_content(self._constraints),
+            "default": get_content(self._default),
+            "transform": get_content(self._transform),
+            "auto_set": get_content(self._auto_set),
+            "exists": get_content(self._exists),
             "rights": self._permissions.get_as_dict_of_strings(),
-            # must add events and change functions
         }
         return a
 
@@ -313,8 +293,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 self.path_name(),
             )
 
-        ty = str(type(self))
-
         rights = self._permissions.check_all(self.get_root())
         for right_name, value in rights.items():
             if value is None:
@@ -324,16 +302,15 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                     rights[right_name] = parent.get("rights").get(right_name, False)
 
         a = {
-            "type": ty,
-            "type_short": re.sub(r".*\.|'>", "", ty),
-            "description": self.get_as_string(self._description),
-            "required": self.get_as_string(self._not_none),
-            "in": self.get_as_string(self._union),
-            "constraints": self.get_as_string(self._constraints),
-            "default": self.get_as_string(self._default),
+            "types": get_class_names_hierachie(type(self)),
+            "description": get_content(self._description),
+            "required": get_content(self._not_none),
+            "union": get_content(self._union),
+            "constraints": get_content(self._constraints),
+            "auto_set": get_content(self._auto_set),
+            "default": get_content(self._default),
             "exists": self.exists(self.get_value()),
             "rights": rights,
-            # must add events and change functions
         }
 
         return a

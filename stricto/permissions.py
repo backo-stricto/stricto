@@ -122,7 +122,7 @@ class Permissions:
         r = {}
         for right, func_or_value in self._permissions.items():
             if callable(func_or_value):
-                r[right] = "func"  # inspect.getsource(func_or_value)
+                r[right] = "Callable"  # inspect.getsource(func_or_value)
             else:
                 r[right] = func_or_value
         return r

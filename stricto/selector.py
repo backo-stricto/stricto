@@ -66,14 +66,6 @@ class Selector:
         """
         return self.selector.pop(0)
 
-    def first(self):
-        """
-        return the first element without poping it
-        """
-        if len(self.selector) > 0:
-            return self.selector[0]
-        return (None, None)
-
     def __eq__(self, other: Self) -> bool:
         """
         equality test of two object

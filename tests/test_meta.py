@@ -6,7 +6,7 @@ test for Meta informations()
 # pylint: disable=no-member
 import unittest
 
-from stricto import String, Int, Dict, Bool, SSyntaxError, SAttributeError
+from stricto import String, Int, Dict, List, Bool, SSyntaxError, SAttributeError
 
 
 class TestMeta(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -53,11 +53,12 @@ class TestMeta(unittest.TestCase):  # pylint: disable=too-many-public-methods
                     },
                     exists=is_adult,
                 ),
+                "nicknames": List(String()),
             }
         )
 
         a.enable_permissions()
-        a.set({"name": "toto", "age": 8})
+        a.set({"name": "toto", "age": 8, "nicknames": ["to", "toto"]})
         with self.assertRaises(SAttributeError) as e:
             self.assertNotEqual(a.work.get_schema(), None)
         self.assertEqual(

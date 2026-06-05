@@ -10,6 +10,7 @@ from stricto import (
     Dict,
     Int,
     String,
+    SError,
     STypeError,
     SConstraintError,
 )
@@ -41,6 +42,62 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(e.exception.to_string(), '$[0]: Must be a int ("toto")')
         a.set([11])
         self.assertEqual(a[0], 11)
+
+    def test_len(self):
+        """
+        Test len
+        """
+        a = List(Int())
+        a.set([11])
+        self.assertEqual(len(a), 1)
+        a.set(None)
+        self.assertEqual(len(a), 0)
+
+    def test_set_json(self):
+        """
+        Test set json
+        """
+        a = List(Int())
+        a.set("[1, 2, 3]")
+        self.assertEqual(len(a), 3)
+        with self.assertRaises(SError) as e:
+            a.set("[1, toto, 3, 23 ]")
+        self.assertEqual(
+            e.exception.to_string(), "Expecting value: line 1 column 5 (char 4)"
+        )
+        self.assertEqual(len(a), 3)
+        with self.assertRaises(STypeError) as e:
+            a.set([666, "diabolo"])
+        self.assertEqual(e.exception.to_string(), '$[1]: Must be a int ("diabolo")')
+        self.assertEqual(len(a), 3)
+
+    def test_extend(self):
+        """
+        Test len
+        """
+        a = List(Int())
+        a.set([11, 12])
+        a.extend([22, 23])
+        self.assertEqual(repr(a), "[11, 12, 22, 23]")
+        self.assertEqual(len(a), 4)
+        with self.assertRaises(STypeError) as e:
+            a.extend([666, "diabolo"])
+        self.assertEqual(e.exception.to_string(), '$[5]: Must be a int ("diabolo")')
+        self.assertEqual(repr(a), "[11, 12, 22, 23]")
+        self.assertEqual(len(a), 4)
+
+    def test_get_encoded(self):
+        """
+        test get_encoded
+        """
+        a = List(String())
+        b = a.copy()
+        a.set(["m", "n"])
+
+        v = a.get_encoded()
+        self.assertEqual(v, ["m", "n"])
+        b.set(v)
+        self.assertEqual(a, b)
 
     def no_test_list_none(self):
         """

@@ -5,7 +5,7 @@ from .generic import GenericType
 from .list_and_tuple import ListAndTuple
 from .error import STypeError, SConstraintError
 from .selector import Selector
-from .toolbox import validation_parameters
+from .toolbox import validation_parameters, get_content
 from .kparse import Kparse
 
 KPARSE_MODEL = {
@@ -49,9 +49,9 @@ class List(
         :meta private:
         """
         a = GenericType.get_schema(self)
-        a["min"] = self.get_as_string(self._min)
-        a["max"] = self.get_as_string(self._max)
-        a["uniq"] = self.get_as_string(self._uniq)
+        a["min"] = get_content(self._min)
+        a["max"] = get_content(self._max)
+        a["uniq"] = get_content(self._uniq)
         a["sub_type"] = self._type.get_schema()
         return a
 
@@ -142,25 +142,6 @@ class List(
         v = GenericType.get_value(self)
         if other is None:
             return v is None
-
-        # A list. Do a patch on each element
-        if isinstance(other, list):
-            if self._value is None:
-                return False
-
-            if len(v) != len(other):
-                return False
-
-            index = 0
-            for item in v:
-                try:
-                    rep = item.match(other[index])
-                    index += 1
-                    if rep is False:
-                        return False
-                except Exception:  # pylint: disable=broad-exception-caught
-                    return False
-            return True
 
         return ListAndTuple.match(self, other)
 

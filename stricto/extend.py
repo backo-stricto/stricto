@@ -16,20 +16,6 @@ class Extend(GenericType):
         self._type = type_for_extend
         GenericType.__init__(self, **kwargs)
 
-    def __json_encode__(self):
-        """
-        Called by the specific Encoder
-        Must be overwrite
-        """
-        return self.get_value()
-
-    def __json_decode__(self, value):
-        """
-        Called by the specific Decoder
-        Must be overwrite
-        """
-        return value
-
     def check_type(
         self,
         value,

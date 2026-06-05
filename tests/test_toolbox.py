@@ -8,8 +8,10 @@ from typing import Any, Callable, Self
 from stricto import (
     SSyntaxError,
     validation_parameters,
+    get_class_names_hierachie,
     Int,
     GenericType,
+    Datetime,
 )
 
 
@@ -254,4 +256,14 @@ class TestToolbox(unittest.TestCase):
         self.assertEqual(
             e.exception.to_string(),
             'In function "b", the parameter "a" must be type <class \'str\'>',
+        )
+
+    def test_class_hierachie(self):
+        """
+        test class hierachie
+        """
+        self.assertEqual(get_class_names_hierachie(type(Int())), ["Int", "GenericType"])
+        self.assertEqual(get_class_names_hierachie(Int), ["Int", "GenericType"])
+        self.assertEqual(
+            get_class_names_hierachie(Datetime), ["Datetime", "Extend", "GenericType"]
         )

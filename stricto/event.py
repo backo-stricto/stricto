@@ -4,81 +4,7 @@ Module providing Event management
 
 import copy
 from typing import Callable, Any
-from .selector import Selector
 from .error import SSyntaxError
-from .toolbox import validation_parameters
-
-
-class StrictoEvent:
-    """Stricto Event"""
-
-    listen_selectors: list[Selector] = None
-    listen_event_name: str = None
-    function: Callable = None
-    me: Any = None
-
-    @validation_parameters
-    def __init__(
-        self,
-        listen_event_name: str,
-        function: Callable,
-        me: Any,
-        listen_path_str: str | list[str],
-    ) -> None:
-        """Constructor"""
-
-        if isinstance(listen_path_str, str):
-            self.listen_selectors = [Selector(listen_path_str)]
-        if isinstance(listen_path_str, list):
-            self.listen_selectors = []
-            for p in listen_path_str:
-                self.listen_selectors.append(Selector(p))
-
-        self.listen_event_name = listen_event_name
-        self.function = function
-        self.me = me
-        self.trigg_path = []
-
-    def __copy__(self):
-        cls = self.__class__
-        result = cls.__new__(cls)
-        result.listen_selectors = self.listen_selectors
-        result.listen_event_name = self.listen_event_name
-        result.me = self.me
-        result.function = self.function
-
-        return result
-
-    def __str__(self):
-        return f"StrictoEvent({self.listen_event_name}, {self.listen_selectors})"
-
-    def match_selectors(self, origin_selector: Selector) -> bool:
-        """Check if origin_selector is in the list of selector (or a parent)
-
-        :param origin_selector: _description_
-        :type origin_selector: Selector
-        :return: _description_
-        :rtype: bool
-        """
-        # (f'Match selector {origin_selector} with {self.listen_selectors}')
-        for p in self.listen_selectors:
-            if origin_selector <= p:
-                return True
-        return False
-
-    def trigg(self, root: Any, **kwargs) -> None:
-        """Trigg the event function if the origin selector
-        is included in the listen_path selector
-
-        :param root: The root object
-        :type root: Generic
-        """
-
-        remapped_me = root.select(self.me.path_name())
-        if remapped_me is None:
-            return
-
-        self.function(self.listen_event_name, root, remapped_me, **kwargs)
 
 
 class SingletonEventManager:
@@ -109,8 +35,12 @@ class SingletonEventManager:
     ) -> None:
         """Register an event
 
-        :param event: The event to register
-        :type event: StrictoEvent
+        :param me: The object who listen to the event
+        :type me: Any (in fact a GenericType)
+        :param listen_event_name: the name of the event to listen
+        :type listen_event_name: str
+        :param function: the function to call when the event is trigged
+        :type function: Callable
         """
         # Create events per id
         if me._event_id not in self._events_per_object:

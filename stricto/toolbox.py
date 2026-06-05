@@ -10,6 +10,43 @@ from functools import wraps
 from .error import SSyntaxError
 
 
+def get_content(value: Any) -> Any:
+    """Return the value but if the value is Callable (a function)
+    return a string 'Callable'
+
+    :param value: the value
+    :type value: Any
+    :return: _description_
+    :rtype: Any
+    """
+    if isinstance(value, list):
+        a = []
+        for i in value:
+            a.append(get_content(i))
+        return a
+    if callable(value):
+        return "Callable"  # inspect.getsource(value)
+    return value
+
+
+def get_class_names_hierachie(cl: type) -> list[str]:
+    """Return a list of classnames
+
+    :param cl: the class to inspect
+    :type cl: type
+    :return: a list of path
+    :rtype: list[str]
+    """
+    path = []
+    name = cl.__name__
+    if name != "object":
+        path.append(name)
+    parents: tuple = cl.__bases__
+    if len(parents) == 1:
+        path.extend(get_class_names_hierachie(parents[0]))
+    return path
+
+
 def check_value_type(  # pylint: disable=too-many-return-statements, too-many-return-statements, too-many-branches
     value, target_type
 ) -> bool:

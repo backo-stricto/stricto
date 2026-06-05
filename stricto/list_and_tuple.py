@@ -1,9 +1,11 @@
 """Module providing the List() Class"""
 
 import copy
+import json
 from typing import Any, Self
 from .generic import GenericType, ViewType
 from .error import SError, SAttributeError
+from .toolbox import get_content
 
 
 class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
@@ -54,9 +56,9 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         Return a schema for this object
         """
         a = GenericType.get_current_meta(self, parent)
-        a["min"] = self.get_as_string(self._min)
-        a["max"] = self.get_as_string(self._max)
-        a["uniq"] = self.get_as_string(self._uniq)
+        a["min"] = get_content(self._min)
+        a["max"] = get_content(self._max)
+        a["uniq"] = get_content(self._uniq)
 
         return a
 
@@ -282,6 +284,12 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         must be overwritten
         """
         return None
+
+    def __json_decode__(self, value):
+        """
+        Called by the specific Decoder
+        """
+        return json.loads(value)
 
     def set_value(self, value: Any) -> bool:
         """Set hardly the value

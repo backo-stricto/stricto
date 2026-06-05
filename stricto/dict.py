@@ -25,7 +25,6 @@ class Dict(GenericType):
         """
         self.__dict__["_locked"] = False
 
-        GenericType.__init__(self, **kwargs)
         self._keys = []
         for key in schema.keys():
             m = schema.get(key)
@@ -42,6 +41,8 @@ class Dict(GenericType):
             mm._attribute_name = key
             setattr(self, key, mm)
             self._keys.append(key)
+
+        GenericType.__init__(self, **kwargs)
 
         self.__dict__["_locked"] = True
 
@@ -413,18 +414,6 @@ class Dict(GenericType):
             a[key] = v.get_encoded()
         return a
 
-    def get_old_value(self):
-        """
-        Return the previous version of values
-        """
-        a = {}
-        for key in self._keys:
-            v = self.__dict__[key]
-            if v.exists_or_can_read() is False:
-                continue
-            a[key] = v.get_old_value()
-        return a
-
     def __json_encode__(self):
         """
         Called by the specific Encoder
@@ -668,10 +657,7 @@ class Dict(GenericType):
         """
         check if conplain to model or raise an
         """
-        if isinstance(value, dict):
-            return True
-
-        if isinstance(value, Dict):
+        if isinstance(value, (dict, Dict)):
             return True
 
         raise STypeError(

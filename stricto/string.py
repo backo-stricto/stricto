@@ -5,6 +5,7 @@ from typing import Callable
 from .generic import GenericType
 from .error import STypeError, SConstraintError
 from .kparse import Kparse
+from .toolbox import get_content
 
 KPARSE_MODEL = {
     "regexp|pattern|patterns|reg": {"type": str | list[str] | Callable, "default": []},
@@ -45,7 +46,7 @@ class String(GenericType):
         :meta private:
         """
         a = GenericType.get_schema(self)
-        a["regexp"] = self.get_as_string(self._regexps)
+        a["regexp"] = get_content(self._regexps)
         return a
 
     def __len__(self):

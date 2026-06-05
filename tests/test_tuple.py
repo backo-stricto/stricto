@@ -58,6 +58,31 @@ class TestTuple(unittest.TestCase):
         self.assertEqual(a, b)
         self.assertNotEqual(a, b[0])
 
+    def test_add(self):
+        """
+        Test add()
+        """
+        a = Tuple((Bool(), Int()))
+        a.set((True, 22))
+        self.assertEqual(a[0], True)
+        self.assertEqual(a[1], 22)
+        self.assertEqual(len(a), 2)
+        b = a + ("aa", 11)
+        self.assertEqual(len(b), 4)
+
+    def test_get_encoded(self):
+        """
+        test get_encoded
+        """
+        a = Tuple((Bool(), Int()))
+        b = a.copy()
+        a.set((True, 22))
+
+        v = a.get_encoded()
+        self.assertEqual(v, (True, 22))
+        b.set(v)
+        self.assertEqual(a, b)
+
     def test_list_to_type(self):
         """
         Test list to tuple

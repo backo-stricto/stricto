@@ -22,7 +22,7 @@ from .error import (
     SRightError,
     SError,
 )
-from .toolbox import validation_parameters
+from .toolbox import validation_parameters, get_class_names_hierachie, get_content
 from .extend import Extend
 from .json_encoder import StrictoEncoder
 from .extended.bytes import Bytes

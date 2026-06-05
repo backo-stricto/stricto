@@ -6,6 +6,7 @@ Module providing the Int() Class
 from .generic import GenericType
 from .error import STypeError, SConstraintError
 from .kparse import Kparse
+from .toolbox import get_content
 
 KPARSE_MODEL = {
     "min|minimum": int,
@@ -44,8 +45,8 @@ class Int(GenericType):
         :meta private:
         """
         a = GenericType.get_schema(self)
-        a["min"] = self.get_as_string(self._min)
-        a["max"] = self.get_as_string(self._max)
+        a["min"] = get_content(self._min)
+        a["max"] = get_content(self._max)
         return a
 
     def check_type(
