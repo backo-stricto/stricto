@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.1] - 2026-06-05
+
+* Feature
+  * changing meta information on types with a list
+  * changing get_schema structure
+* Internal
+  * Adding tests to improve coverage
+  
+## [0.2.0] - 2026-06-01
+ 
 ## [0.2.0] - 2026-06-01
 
 * Fix :
