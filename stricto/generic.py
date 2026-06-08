@@ -271,6 +271,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             "auto_set": get_content(self._auto_set),
             "exists": get_content(self._exists),
             "rights": self._permissions.get_as_dict_of_strings(),
+            "path": self.path_name()
         }
         return a
 
