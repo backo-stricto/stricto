@@ -2,6 +2,7 @@
 """
 test for Errors()
 """
+
 import unittest
 
 from stricto import StrictoError, STypeError, SError
