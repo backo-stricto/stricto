@@ -9,17 +9,13 @@ from urllib.parse import urlsplit, SplitResult
 from stricto.extend import Extend
 from stricto import STypeError, SError
 
-# from ..kparse import Kparse  # pylint: disable=relative-beyond-top-level
-# Define KPARSE_MODEL if needed for future constraints (e.g., included/excluded URLs)
-# included/excluded are list of regexp that the URL must match (included) or must not match (excluded)
-KPARSE_MODEL = {
-    "included": list(str),
-    "excluded": list(str),
-}
 
 class Url(Extend):
 
     def __init__(self, **kwargs):
+        """
+        initialisation. Must pass the type (SplitResult)
+        """
         super().__init__(SplitResult, **kwargs)
 
     def __json_encode__(self):
