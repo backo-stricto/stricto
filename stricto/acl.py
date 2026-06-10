@@ -25,7 +25,13 @@ class ACL:
     def __repr__(self):
         return self.__str__()
     
-    def match(self, domain: str) -> bool:
+    def is_a_whitelist(self) -> bool:
+        """
+        Return true if the ACL is a whitelist, false if it's a blacklist
+        """
+        return self.is_whitelist
+
+    def accept(self, domain: str) -> bool:
         """
         Check if a domain is allowed by the ACL by matching the domain string against the compiled pattern.
         If a pattern matches, the result is determined by the is_whitelist flag.
@@ -34,4 +40,11 @@ class ACL:
         if re.match(self.pattern, domain):
             return self.is_whitelist
         return not self.is_whitelist
+    
+    def is_equal(self, pattern: str, is_whitelist: bool) -> bool:
+        """
+        Check if the ACL is equal to the given pattern and is_whitelist flag
+        """
+        compiled_pattern = re.compile(pattern)
+        return self.pattern == compiled_pattern and self.is_whitelist == is_whitelist
     
