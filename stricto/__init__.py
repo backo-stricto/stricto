@@ -35,3 +35,4 @@ from .extended.complex import Complex
 from .selector import Selector
 from .kparse import Kparse
 from .event import EVENT_MANAGER
+from .extended.email import Email

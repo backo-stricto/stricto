@@ -8,7 +8,6 @@ import unittest
 
 from stricto import String, Int, Dict, SRightError, SAttributeError
 
-
 can_modify_flag = True  # pylint: disable=invalid-name
 
 
