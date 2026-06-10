@@ -36,7 +36,7 @@ class TestUrl(unittest.TestCase):  # pylint: disable=too-many-public-methods
         Test default value when default is a callable
         """
 
-        def default_url(root):
+        def default_url(_root):
             return urlsplit("http://example.com")
 
         a = Url(default=default_url)
@@ -47,7 +47,7 @@ class TestUrl(unittest.TestCase):  # pylint: disable=too-many-public-methods
         Test default value when default is a callable that returns an invalid URL
         """
 
-        def default_url(root):
+        def default_url(_root):
             return urlsplit("not a url")
 
         with self.assertRaises(STypeError) as e:
