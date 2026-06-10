@@ -1,12 +1,17 @@
-from stricto import Extend, SConstraintError, STypeError
+"""
+Module email verify if valid
+"""
 import re
+from stricto import Extend, SConstraintError
 
 
 class Email(Extend):
+    """Extend type that validates and stores an email address."""
     def __init__(self, **kwargs):
         super().__init__(str, **kwargs)
 
     def __json_encode__(self):
+
         va = self.get_value()
         if va is None:
             return None
@@ -16,6 +21,7 @@ class Email(Extend):
         return value
 
     def check_constraints(self, value: str):
+
         pattern1 = r"[A-Za-z0-9-.+]+.[A-Za-z0-9-.+]*"
         pattern2 = r"[A-Za-z0-9-.+]+.[A-Za-z]+"
         result = pattern1 + r"@" + pattern2
