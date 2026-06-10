@@ -44,4 +44,3 @@ class Url(Extend):
                 self.path_name(),
                 value=value,
             )
-        

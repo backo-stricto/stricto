@@ -53,7 +53,9 @@ class TestUrl(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaises(STypeError) as e:
             Url(default=default_url)
 
-        self.assertEqual(e.exception.to_string(), 'Value "not a url" must be a valid URL')
+        self.assertEqual(
+            e.exception.to_string(), 'Value "not a url" must be a valid URL'
+        )
 
     def test_default_invalid(self):
         """
@@ -62,7 +64,9 @@ class TestUrl(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaises(STypeError) as e:
             Url(default=123)
 
-        self.assertEqual(e.exception.to_string(), '$: Must be a valid URL (value="123")')
+        self.assertEqual(
+            e.exception.to_string(), '$: Must be a valid URL (value="123")'
+        )
 
     def test_default_invalid_string(self):
         """
@@ -70,7 +74,9 @@ class TestUrl(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         with self.assertRaises(STypeError) as e:
             Url(default="not a url")
-        self.assertEqual(e.exception.to_string(), '$: Must be a valid URL (value="not a url")')
+        self.assertEqual(
+            e.exception.to_string(), '$: Must be a valid URL (value="not a url")'
+        )
 
     def test_string_error(self):
         """
@@ -131,4 +137,3 @@ class TestUrl(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         a = Url()
         self.assertEqual(a.get_encoded(), None)
-
