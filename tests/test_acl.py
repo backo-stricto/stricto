@@ -27,10 +27,8 @@ class TestACL(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         with self.assertRaises(ValueError) as e:
             a = ACL(r"invalid_pattern((", False)
-        self.assertEqual(
-            str(e.exception), 'Invalid regex pattern: invalid_pattern(('
-        )
-        
+        self.assertEqual(str(e.exception), "Invalid regex pattern: invalid_pattern((")
+
     def test_acl_init_with_valid_pattern(self):
         """
         Test ACL initialization with valid pattern
@@ -72,5 +70,9 @@ class TestACL(unittest.TestCase):  # pylint: disable=too-many-public-methods
         Test ACL __str__ and __repr__ methods
         """
         a = ACL(r"^example\.com$", True)
-        self.assertEqual(str(a), "ACL(pattern=re.compile('^example\\\\.com$'), is_whitelist=True)")
-        self.assertEqual(repr(a), "ACL(pattern=re.compile('^example\\\\.com$'), is_whitelist=True)")
+        self.assertEqual(
+            str(a), "ACL(pattern=re.compile('^example\\\\.com$'), is_whitelist=True)"
+        )
+        self.assertEqual(
+            repr(a), "ACL(pattern=re.compile('^example\\\\.com$'), is_whitelist=True)"
+        )
