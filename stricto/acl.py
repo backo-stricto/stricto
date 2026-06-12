@@ -14,8 +14,6 @@ class ACL:
     """
 
     def __init__(self, pattern: str, is_whitelist: bool):
-        "compile the pattern to check if it's a valid regex, if not raise an exception"
-        "and store the compiled pattern in the ACL for faster matching"
         try:
             self.pattern = re.compile(pattern)
         except re.error as e:
