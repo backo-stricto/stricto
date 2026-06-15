@@ -875,7 +875,14 @@ self.assertEqual(repr(a.b), "(12.0+9.0i)")
 
 For personal use only
 
+Legacy virtualenv workflow:
+
 ```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e . black coverage pylint
+
 # all tests
 python -m unittest tests
 # or for only some tests
@@ -884,7 +891,7 @@ python -m unittest tests/test_bool.py
 python -m unittest tests.TestDict.test_simple_type
 
 # reformat
-python -m black .
+black .
 
 # pylint
 pylint $(git ls-files '*.py')
@@ -892,6 +899,33 @@ pylint $(git ls-files '*.py')
 # coverage
 coverage run -m unittest tests
 coverage html # report under htmlcov/index.html
+firefox htmlcov/index.html
+```
+
+uv workflow:
+
+```bash
+uv sync --group dev
+
+# all tests
+uv run python -m unittest tests
+# or for only some tests
+uv run python -m unittest tests/test_bool.py
+# or for a specific test
+uv run python -m unittest tests.TestDict.test_simple_type
+
+# reformat
+uv run black .
+
+# pylint
+uv run pylint $(git ls-files '*.py')
+
+# coverage
+# for all tests
+uv run coverage run -m unittest tests
+# for a single tests suite
+uv run coverage run -m unittest tests.MyTests
+uv run coverage html # report under htmlcov/index.html
 firefox htmlcov/index.html
 ```
 

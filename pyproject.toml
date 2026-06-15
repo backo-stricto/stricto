@@ -2,7 +2,7 @@
 name = "stricto"
 version = "0.2.1"
 authors = [
-  { name="Bertrand Wallrich", email="Bertrand.Wallrich@inria.fr" },
+    { name="Bertrand Wallrich", email="Bertrand.Wallrich@inria.fr" },
 ]
 description = "Strict Dict (json) with schema validation embedded"
 readme = "README.md"
@@ -14,6 +14,13 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+]
+
+[dependency-groups]
+dev = [
+    "black",
+    "coverage",
+    "pylint",
 ]
 
 [project.urls]
