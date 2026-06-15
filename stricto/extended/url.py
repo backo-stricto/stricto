@@ -38,7 +38,9 @@ class Url(Extend):
                     raise STypeError(f'Value "{value.geturl()}" must be a valid URL')
                 return True
             except (ValueError, TypeError) as exception:
-                raise STypeError(f'Value "{value.geturl()}" must be a valid URL') from exception
+                raise STypeError(
+                    f'Value "{value.geturl()}" must be a valid URL'
+                ) from exception
         else:
             raise STypeError(
                 '{0}: Must be a valid URL (value="{value}")',
