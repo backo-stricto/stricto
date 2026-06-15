@@ -2,11 +2,12 @@
 List acl that search
 """
 
-from stricto import ACL,Extend
+from stricto import ACL, Extend
 
 
 class ACLS(Extend):
     """init list acl and default"""
+
     def __init__(self, acls: list[ACL], default: bool):
         self.acls = acls
         self.default = default
