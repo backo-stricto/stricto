@@ -1,15 +1,18 @@
 "test module acls"
+
 import unittest
 from stricto import ACLS, ACL
 
+
 class TestACLS(unittest.TestCase):
     """class of test ACLS"""
+
     def __init__(self, *args, **kwargs):
         "init test ACLs"
         super().__init__(*args, **kwargs)
 
     def test_authorize_is_a_whitelist_and_default_is_false(self):
-        """*test if ACL is a whitelist et result equal true so accept a domain """
+        """*test if ACL is a whitelist et result equal true so accept a domain"""
 
         l = ACLS(
             [
@@ -21,8 +24,9 @@ class TestACLS(unittest.TestCase):
         )
 
         self.assertTrue(l.authorize("fifi.com"))
+
     def test_authorize_is_a_not_whitelist_and_default_true(self):
-        """list ACLS that return False """
+        """list ACLS that return False"""
         l = ACLS(
             [
                 ACL("example.fr", False),
@@ -47,6 +51,7 @@ class TestACLS(unittest.TestCase):
             default=False,
         )
         self.assertFalse(l.authorize("titi.fr"))
+
     def test_authorize_is_whitelist_ant_is_not_whitlist_is_accept(self):
         """list acls who authorize if donmain is accept and not whitelist"""
 
@@ -61,6 +66,7 @@ class TestACLS(unittest.TestCase):
             default=False,
         )
         self.assertTrue(l.authorize("titifine.fr"))
+
     def test_not_math_and_is_whitelist(self):
         """not math"""
 
@@ -74,6 +80,7 @@ class TestACLS(unittest.TestCase):
             default=True,
         )
         self.assertTrue(l.authorize("foutooou.org"))
+
     def test_math_and_is_not_whitelist(self):
         """match and is not whitelist"""
 
@@ -87,8 +94,9 @@ class TestACLS(unittest.TestCase):
             default=True,
         )
         self.assertFalse(l.authorize("gogo.com"))
+
     def test_not_math_and_is_not_whitelist(self):
-        """ notch and not whitelist"""
+        """notch and not whitelist"""
 
         l = ACLS(
             [
