@@ -74,7 +74,7 @@ class TestDiff(unittest.TestCase):
         dhash2.update(encoded2)
         self.assertEqual(dhash1.hexdigest(), dhash2.hexdigest())
 
-    def xtest_diff_simple(self):
+    def test_diff_simple(self):
         """
         Test a diff
         """
