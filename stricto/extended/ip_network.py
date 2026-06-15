@@ -2,6 +2,7 @@
 """
 Module for ip network addresses in CIDR notation
 """
+
 import ipaddress
 from stricto.extend import Extend
 from stricto import STypeError

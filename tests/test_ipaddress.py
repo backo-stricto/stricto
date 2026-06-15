@@ -65,7 +65,7 @@ class TestIpAddress(unittest.TestCase):  # pylint: disable=too-many-public-metho
 
     def test_get_value(self):
         """
-        Test json
+        Test get_value
         """
         a = Ipaddress()
         b = Ipaddress()
