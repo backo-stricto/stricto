@@ -456,7 +456,7 @@ class Dict(GenericType):
             return self
 
         # The index_or_slice is actually ignored.
-        (key, sub_index_or_slice) = sel.pop()
+        key, sub_index_or_slice = sel.pop()
 
         if key in self._keys:
             v = self.__dict__[key]

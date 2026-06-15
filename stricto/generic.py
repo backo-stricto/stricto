@@ -271,7 +271,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             "auto_set": get_content(self._auto_set),
             "exists": get_content(self._exists),
             "rights": self._permissions.get_as_dict_of_strings(),
-            "path": self.path_name()
+            "path": self.path_name(),
         }
         return a
 
@@ -545,7 +545,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         if sel.empty():
             return self
 
-        (key, sub_index_or_slice) = sel.pop()
+        key, sub_index_or_slice = sel.pop()
 
         if key == "$":
             return self.get_root().get_selectors(sub_index_or_slice, sel)

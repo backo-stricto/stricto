@@ -22,4 +22,7 @@ from .test_meta import TestMeta
 from .test_selectors import TestSelectors
 from .test_toolbox import TestToolbox
 from .test_kparse import TestKparse
+from .test_url import TestUrl
 from .test_event import TestEvent
+from .test_acl import TestACL
+from .test_acls import TestACLS
