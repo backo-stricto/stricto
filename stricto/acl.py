@@ -1,8 +1,10 @@
 """
-File that defines the ACL class, which is used to manage access control lists 
+File that defines the ACL class, which is used to manage access control lists
 for allowing or restricting domains for emails and urls
 """
+
 import re
+
 
 class ACL:
     """
@@ -10,9 +12,8 @@ class ACL:
     - a compiled regex pattern that is used for matching a domain
     - a boolean that indicates if the ACL is a whitelist (allow only the domains that match) or a blacklist (block the domains that match)
     """
-    def __init__(self, pattern:str, is_whitelist: bool):
-        "compile the pattern to check if it's a valid regex, if not raise an exception"
-        "and store the compiled pattern in the ACL for faster matching"
+
+    def __init__(self, pattern: str, is_whitelist: bool):
         try:
             self.pattern = re.compile(pattern)
         except re.error as e:
@@ -24,7 +25,7 @@ class ACL:
 
     def __repr__(self):
         return self.__str__()
-    
+
     def is_a_whitelist(self) -> bool:
         """
         Return true if the ACL is a whitelist, false if it's a blacklist
@@ -40,11 +41,10 @@ class ACL:
         if re.match(self.pattern, domain):
             return self.is_whitelist
         return not self.is_whitelist
-    
+
     def is_equal(self, pattern: str, is_whitelist: bool) -> bool:
         """
         Check if the ACL is equal to the given pattern and is_whitelist flag
         """
         compiled_pattern = re.compile(pattern)
         return self.pattern == compiled_pattern and self.is_whitelist == is_whitelist
-    

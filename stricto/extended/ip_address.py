@@ -2,6 +2,7 @@
 """
 Module for ip adresses
 """
+
 import ipaddress
 from stricto.extend import Extend
 from stricto import STypeError
