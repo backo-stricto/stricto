@@ -14,6 +14,9 @@ from stricto import (
     Tuple,
     STypeError,
     SAttributeError,
+    Filterer, 
+    SuperFilter,
+    Operator
 )
 
 
@@ -306,3 +309,45 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
 
         ms = a.multi_select(["$.a", "$.b.c"])
         self.assertEqual(ms, [12, 1])
+
+    def test_filter(self):
+        """test filter
+        """
+        a = Dict(
+            {
+                "a": Int(default=1),
+                "c": Int(default=1),
+                "b": Dict(
+                    {
+                        "c": Int(default=1),
+                        "l": List(Dict({"i": String()})),
+                        "t": Tuple((Int(), String())),
+                        "tt": Tuple((Int(), Dict({"i": String()}))),
+                    }
+                ),
+            }
+        )
+        a.set(
+            {
+                "a": 12,
+                "c" : 22,
+                "b": {
+                    "c": 33,
+                    "l": [
+                        {"i": "fir"},
+                        {"i": "sec"},
+                    ]
+                },
+            }
+        )
+
+        f = SuperFilter( '$.a', Operator.EQ, 12)
+        self.assertEqual( f.check(a), True )
+        f = SuperFilter( '$.b.c', Operator.GT, 22)
+        self.assertEqual( f.check(a), True )
+        f = SuperFilter( None, Operator.NOT, SuperFilter( '$.a', Operator.EQ, 12) )
+        self.assertEqual( f.check(a), False )
+        f = SuperFilter( None, Operator.AND, [SuperFilter( '$.a', Operator.EQ, 12), SuperFilter( '$.c', Operator.EQ, 22) ] )
+        self.assertEqual( f.check(a), True )
+        f = SuperFilter( '$.l', Operator.CONTAINS, SuperFilter( 'i', Operator.EQ, 'fir') )
+        self.assertEqual( f.check(a), True )

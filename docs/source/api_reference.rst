@@ -44,3 +44,7 @@ References
 .. autoclass:: Tuple
    :members:
    :show-inheritance: 
+
+.. autoclass:: Ipaddress
+   :members:
+   :show-inheritance: 

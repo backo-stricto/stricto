@@ -34,4 +34,5 @@ from .permissions import Permissions
 from .extended.complex import Complex
 from .selector import Selector
 from .kparse import Kparse
+from .filter import Filterer,Operator, SuperFilter
 from .event import EVENT_MANAGER

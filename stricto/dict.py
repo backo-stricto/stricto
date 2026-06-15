@@ -309,7 +309,7 @@ class Dict(GenericType):
             return True
         return GenericType._match_operator(self, operator, other)
 
-    def match(self, other: dict) -> bool:  # pylint: disable=too-many-return-statements
+    def match(self, other: dict|tuple) -> bool:  # pylint: disable=too-many-return-statements
         """
         Check if equality with an object
         example : me : { a :  12, b : 13, c : 14 }
