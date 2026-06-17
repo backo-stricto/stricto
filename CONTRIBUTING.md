@@ -1,4 +1,4 @@
-# Contributing to ctricto
+# Contributing to stricto
 
 Help wanted! We'd love your contributions to stricto. Please review the following guidelines before contributing. Also, feel free to propose changes to these guidelines by updating this file and submitting a pull request.
 
@@ -11,17 +11,17 @@ Help wanted! We'd love your contributions to stricto. Please review the followin
 
 Please don't open a GitHub issue for questions about how to use `stricto`, as the goal is to use issues for managing bugs and feature requests. Issues that are related to general support will be closed and redirected to our gitter room.
 
-For all support related questions, please use [discussions](https://github.com/bwallrich/stricto/discussions).
+For all support related questions, please use [discussions](https://github.com/backo-stricto/stricto/discussions).
 
 ## <a id="bugs"></a> Found a Bug?
 
-If you've identified a bug in `stricto`, please [submit an issue](#issue) to our GitHub repo: [bwallrich/stricto](https://github.com/bwallrich/stricto/issues/new). Please also feel free to submit a [Pull Request](#pr) with a fix for the bug!
+If you've identified a bug in `stricto`, please [submit an issue](#issue) to our GitHub repo: [backo-stricto/stricto](https://github.com/backo-stricto/stricto/issues/new). Please also feel free to submit a [Pull Request](#pr) with a fix for the bug!
 
 ## <a id="features"></a> Have a Feature Request?
 
 All feature requests should start with [submitting an issue](#issue) documenting the user story and acceptance criteria. Again, feel free to submit a [Pull Request](#pr) with a proposed implementation of the feature.
 
-If you are not sure, go to [discussions](https://github.com/bwallrich/stricto/discussions)
+If you are not sure, go to [discussions](https://github.com/backo-stricto/stricto/discussions)
 
 ## <a id="process"></a> Ready to Contribute
 
@@ -33,7 +33,7 @@ Assuming no existing issues exist, please ensure you include required informatio
 
 We may have additional questions and will communicate through the GitHub issue, so please respond back to our questions to help reproduce and resolve the issue as quickly as possible.
 
-New issues can be created with in our [GitHub repo](https://github.com/bwallrich/stricto/issues/new).
+New issues can be created with in our [GitHub repo](https://github.com/backo-stricto/stricto/issues/new).
 
 ### <a id="pr"></a>Pull Requests
 
@@ -51,6 +51,6 @@ Please use **sparingly**
 
 ### License
 
-By contributing your code, you agree to license your contribution under the terms of the [MIT License](https://github.com/bwallrich/stricto/blob/main/LICENSE).
+By contributing your code, you agree to license your contribution under the terms of the [MIT License](https://github.com/backo-stricto/stricto/blob/main/LICENSE).
 
 All files are released with this licence.

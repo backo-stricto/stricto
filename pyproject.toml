@@ -24,9 +24,9 @@ dev = [
 ]
 
 [project.urls]
-GitHub = "https://github.com/bwallrich/stricto"
-Homepage = "https://github.com/bwallrich/stricto"
-Issues = "https://github.com/bwallrich/stricto/issues"
+GitHub = "https://github.com/backo-stricto/stricto"
+Homepage = "https://github.com/backo-stricto/stricto"
+Issues = "https://github.com/backo-stricto/stricto/issues"
 
 [build-system]
 requires = ["hatchling"]
