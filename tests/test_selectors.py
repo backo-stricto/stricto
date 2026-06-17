@@ -14,9 +14,8 @@ from stricto import (
     Tuple,
     STypeError,
     SAttributeError,
-    Filterer, 
-    SuperFilter,
-    Operator
+    SFilter,
+    Operator,
 )
 
 
@@ -311,8 +310,7 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
         self.assertEqual(ms, [12, 1])
 
     def test_filter(self):
-        """test filter
-        """
+        """test filter"""
         a = Dict(
             {
                 "a": Int(default=1),
@@ -330,24 +328,73 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
         a.set(
             {
                 "a": 12,
-                "c" : 22,
+                "c": 22,
                 "b": {
                     "c": 33,
                     "l": [
                         {"i": "fir"},
                         {"i": "sec"},
-                    ]
+                    ],
                 },
             }
         )
+        f = SFilter("$.a", Operator.EQ, 12)
+        self.assertEqual(repr(f), 'SFilter("$.a" Operator.EQ 12)')
+        self.assertEqual(f.check(a), True)
 
-        f = SuperFilter( '$.a', Operator.EQ, 12)
-        self.assertEqual( f.check(a), True )
-        f = SuperFilter( '$.b.c', Operator.GT, 22)
-        self.assertEqual( f.check(a), True )
-        f = SuperFilter( None, Operator.NOT, SuperFilter( '$.a', Operator.EQ, 12) )
-        self.assertEqual( f.check(a), False )
-        f = SuperFilter( None, Operator.AND, [SuperFilter( '$.a', Operator.EQ, 12), SuperFilter( '$.c', Operator.EQ, 22) ] )
-        self.assertEqual( f.check(a), True )
-        f = SuperFilter( '$.l', Operator.CONTAINS, SuperFilter( 'i', Operator.EQ, 'fir') )
-        self.assertEqual( f.check(a), True )
+        # Errors tests
+        f = SFilter("$.a", Operator.REG, r"toto")
+        self.assertEqual(f.check(a), False)
+        f = SFilter("$.a", Operator.GTE, "dummy")
+        self.assertEqual(f.check(a), False)
+        f = SFilter("$.a", Operator.CONTAINS, SFilter("@.i", Operator.EQ, "fir"))
+        self.assertEqual(f.check(a), False)
+
+        with self.assertRaises(TypeError) as e:
+            f = SFilter("$.a", Operator.CONTAINS, "aa")
+        self.assertEqual(
+            e.exception.args[0], "Operator Operator.CONTAINS need a list of Filter"
+        )
+        with self.assertRaises(TypeError) as e:
+            f = SFilter("$.a", Operator.NOT, "aa")
+        self.assertEqual(
+            e.exception.args[0], "Operator Operator.NOT need a list of Filter"
+        )
+        with self.assertRaises(TypeError) as e:
+            f = SFilter("$.a", Operator.AND, "aa")
+        self.assertEqual(
+            e.exception.args[0], "Operator Operator.AND need a list of Filter"
+        )
+        with self.assertRaises(TypeError) as e:
+            f = SFilter("$.a", Operator.OR, "aa")
+        self.assertEqual(
+            e.exception.args[0], "Operator Operator.OR need a list of Filter"
+        )
+
+        f = SFilter("$.b.c", Operator.GT, 22)
+        self.assertEqual(repr(f), 'SFilter("$.b.c" Operator.GT 22)')
+        self.assertEqual(f.check(a), True)
+        f = SFilter(None, Operator.NOT, SFilter("$.a", Operator.EQ, 12))
+        self.assertEqual(f.check(a), False)
+        f = SFilter(
+            None,
+            Operator.AND,
+            [SFilter("$.a", Operator.EQ, 12), SFilter("$.c", Operator.EQ, 22)],
+        )
+        self.assertEqual(f.check(a), True)
+        self.assertEqual(
+            repr(f),
+            'SFilter("None" Operator.AND [SFilter("$.a" Operator.EQ 12), SFilter("$.c" Operator.EQ 22)])',
+        )
+        f = SFilter(
+            None,
+            Operator.OR,
+            [SFilter("$.a", Operator.EQ, 12), SFilter("$.c", Operator.EQ, 22)],
+        )
+        self.assertEqual(f.check(a), True)
+        f = SFilter(None, Operator.NOT, SFilter("$.a", Operator.GT, 12))
+        self.assertEqual(f.check(a), True)
+        f = SFilter("$.b.l", Operator.CONTAINS, SFilter("@.i", Operator.EQ, "fir"))
+        self.assertEqual(f.check(a), True)
+        f = SFilter("$.b.l", Operator.ALL, SFilter("@.i", Operator.EQ, "fir"))
+        self.assertEqual(f.check(a), False)
