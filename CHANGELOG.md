@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.2] - 2026-06-18
+
+* Feature
+  * Adding ACL() (used by Email and Url types)
+  * Adding extendted types Url() and Email() types
+* Doc
+  * Addinc uv documentation
+* Internal
+  * Adding Filter() and tests for Filter 
+
 ## [0.2.1] - 2026-06-05
 
 * Feature
