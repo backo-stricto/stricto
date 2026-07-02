@@ -877,16 +877,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # Check constraints
         self.check_constraints(self._value)
 
-    def set(self, value: Any) -> None:
-        """
-        Set the new value
-
-        This function set the new value, recompute any other value of the object, check contraints or throw errors, trigg events...
-
-        :param value: the new value
-        :type value: Any
-        :raises e: Exception in any cases or error
-        """
+    def _init_update(self) -> bool:
         root = self.get_root()
 
         changed = False
@@ -897,16 +888,11 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             c = root.set_default_value()
             if c is True:
                 changed = True
+        return changed
 
-        try:
-            c = self.set_value(value)
-            if c is True:
-                changed = True
-
-        except Exception as e:
-            root.rollback()
-            raise e from e
-
+    def _end_update(self, changed_from_set=False):
+        root = self.get_root()
+        changed = changed_from_set
         if root._updating_process == self._event_id:
             changed_while_recompute = True
             num_of_compute_value = 0
@@ -934,6 +920,27 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                     self._on_change(self._old_value, self.get_value(), self.get_root())
 
                 EVENT_MANAGER.trigg("changed", root, self)
+
+    def set(self, value: Any) -> None:
+        """
+        Set the new value
+
+        This function set the new value, recompute any other value of the object, check contraints or throw errors, trigg events...
+
+        :param value: the new value
+        :type value: Any
+        :raises e: Exception in any cases or error
+        """
+        changed = self._init_update()
+        try:
+            c = self.set_value(value)
+            if c is True:
+                changed = True
+
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
+        self._end_update(changed)
 
     def patch_internal(self, op: str, value) -> None:
         """

@@ -132,14 +132,19 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
         Record the value in case of Rollback
         overwrite GenericType.start_record
         """
-        self._old_value = self._value
+
+        # self._old_value = self._value
         if self._value is None:
+            self._old_value = None
             return
 
+        self._old_value = []
         for v in self._value:
             if v is None:
+                self._old_value.append(v)
                 continue
             v.start_record()
+            self._old_value.append(v.copy())
 
     def end_record(self) -> bool:
         """

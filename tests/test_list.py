@@ -50,8 +50,16 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
         a = List(Int())
         a.set([11])
         self.assertEqual(len(a), 1)
+        a.append(12)
+        self.assertEqual(len(a), 2)
         a.set(None)
         self.assertEqual(len(a), 0)
+        a.append(12)
+        self.assertEqual(len(a), 1)
+        a.set([])
+        self.assertEqual(len(a), 0)
+        a.append(12)
+        self.assertEqual(len(a), 1)
 
     def test_set_json(self):
         """
@@ -270,6 +278,24 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(a[0], 12)
         a[0] = 22
         self.assertEqual(a[0], 22)
+
+    def test_set_append_item_complex(self):
+        """
+        Test set a[index]=...
+        """
+        a = List(Dict({"a": Int()}))
+        a.set([{"a": 12}, {"a": 32}])
+        self.assertEqual(len(a), 2)
+        self.assertEqual(a[0].a, 12)
+        a[0] = {"a": 22}
+        self.assertEqual(a[0].a, 22)
+        a.append({"a": 24})
+        self.assertEqual(len(a), 3)
+        b = Dict({"a": Int()})
+        b._parent = a
+        b.a = 11
+        a.append(b)
+        self.assertEqual(len(a), 4)
 
     def test_set_item_slice(self):
         """

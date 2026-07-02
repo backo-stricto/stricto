@@ -39,3 +39,19 @@ from .filter import Operator, SFilter
 from .event import EVENT_MANAGER
 from .acl import ACL
 from .acls import ACLS
+
+ALL_TYPES = [
+    Dict,
+    List,
+    String,
+    Int,
+    Bool,
+    Bytes,
+    Datetime,
+    Ipaddress,
+    Ipnetwork,
+    Url,
+    Tuple,
+    Float,
+    In,
+]

@@ -250,8 +250,16 @@ class List(
         """
         Do List.clear() as list.clear() (with checks)
         """
-        self.check([])
-        self._value.clear()
+        changed = self._init_update()
+        try:
+            self._value.clear()
+            changed = True
+
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
+
+        self._end_update(changed)
 
     def duplicate_in_list(self):
         """
@@ -281,110 +289,94 @@ class List(
         """
         Do a list.insert()
         """
-        # Duplicate and check
-        a = self.duplicate_in_list()
-        model = self._type.copy()
-        model._parent = self
-        model._attribute_name = f"[{key}]"
-        model.set(value)
-        a.insert(key, model)
-        self.check(a)
+        changed = self._init_update()
+        try:
+            model = self._type.copy()
+            model._parent = self
+            model._attribute_name = f"[{key}]"
+            model.set_value(value)
+            self._value.insert(key, model)
+            self.reset_attribute_name()
+            changed = True
 
-        self._old_value = self.duplicate_in_list()
-        v = GenericType.get_value(self)
-        if not isinstance(v, list):
-            self._value = []
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-        self._value.insert(key, model)
-
-        self.reset_attribute_name()
-        # Trigg event "change" to say there is some changements
-        self._trigg_change_event()
+        self._end_update(changed)
 
     def __setitem__(self, key, value):
         """
         Do a list[key] = value
         """
+        changed = self._init_update()
+        try:
+            if isinstance(key, slice):
+                if not isinstance(value, (list, List)):
+                    raise STypeError(
+                        '{0}: can only assign an iterable (slice={key}, value="{value}")',
+                        self.path_name(),
+                        key=key,
+                        value=value,
+                    )
+                a = []
+                for v in value:
+                    model = self._type.copy()
+                    model._parent = self
+                    model.set_value(v)
+                    a.append(model)
 
-        # Duplicate and check
-        a = self.duplicate_in_list()
+                self._value[key] = a
+                self.reset_attribute_name()
 
-        if isinstance(key, slice):
-            models = []
-            for v in value:
-                model = self._type.copy()
-                model._parent = self
-                model._attribute_name = "[slice]"
-                model.set(v)
-                models.append(model)
-            a.__setitem__(key, models)
-            self.check(a)
+            else:
+                v = self._value[key]
+                v.set_value(value)
+                changed = True
 
-            self._old_value = self.duplicate_in_list()
-            self._value.__setitem__(key, models)
-        else:
-            model = self._type.copy()
-            model._parent = self
-            model._attribute_name = f"[{key}]"
-            model.set(value)
-            a[key].set(value)
-            self.check(a)
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-            self._old_value = self.duplicate_in_list()
-            self._value.__setitem__(key, model)
+        self._end_update(changed)
 
     def __delitem__(self, key):
         """
         Do a del (list[key])
         """
+        changed = self._init_update()
+        try:
+            self._value.__delitem__(key)
+            self.reset_attribute_name()
+            changed = True
 
-        # Duplicate and check
-        a = self.duplicate_in_list()
-        a.__delitem__(key)
-        self.check(a)
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-        self._old_value = self.duplicate_in_list()
-        self._value.__delitem__(key)
-        self.reset_attribute_name()
-
-        # Trigg event "change" to say there is some changements
-        self._trigg_change_event()
+        self._end_update(changed)
 
     def sort(self, **kwarg):
         """
         Do a sort(List) like sort(list)
         """
-
-        # Duplicate and check
-        a = self.duplicate_in_list()
-        a.sort(**kwarg)
-        self.check(a)
-
-        v = GenericType.get_value(self)
-        if not isinstance(v, list):
-            self._value = []
-
         return self._value.sort(**kwarg)
 
     def pop(self, key=-1):
         """
         Do a List.pop() like list.pop()
         """
+        changed = self._init_update()
+        try:
+            popped = self._value.pop(key)
+            self.reset_attribute_name()
+            changed = True
 
-        # Build a list to modify and check if ok before
-        # doing the pop
-        a = self.duplicate_in_list()
-        a.pop(key)
-        self.check(a)
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-        self._old_value = self.duplicate_in_list()
-
-        v = GenericType.get_value(self)
-        popped = v.pop(key)
-        self.reset_attribute_name()
-
-        # Trigg event "change" to say there is some changements
-        self._trigg_change_event()
+        self._end_update(changed)
 
         return popped
 
@@ -392,71 +384,60 @@ class List(
         """
         Do a List.remove(value) like list.remove(value)
         """
+        changed = self._init_update()
+        try:
+            self._value.remove(value)
+            self.reset_attribute_name()
+            changed = True
 
-        # Duplicate and check
-        a = self.duplicate_in_list()
-        a.remove(value)
-        self.check(a)
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-        self._old_value = self.duplicate_in_list()
-        removed = self._value.remove(value)
-        self.reset_attribute_name()
-
-        # Trigg event "change" to say there is some changements
-        self._trigg_change_event()
-
-        return removed
+        self._end_update(changed)
 
     def append(self, value):
         """
         Do a List.append(value) like list.append(value)
         """
 
-        model = self._type.copy()
-        model._parent = self
-        model._attribute_name = f"[{len(self)}]"
-        model.set(value)
+        changed = self._init_update()
+        try:
+            model = self._type.copy()
+            model._parent = self
+            model._attribute_name = f"[{len(self)}]"
+            model.set_value(value)
+            self._value.append(model)
+            self.reset_attribute_name()
+            changed = True
 
-        # Duplicate and check
-        a = self.duplicate_in_list()
-        a.append(model)
-        self.check(a)
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-        self._old_value = self.duplicate_in_list()
-        v = GenericType.get_value(self)
-        if not isinstance(v, list):
-            self._value = []
-
-        self._value.append(model)
-        # Trigg event "change" to say there is some changements
-        self._trigg_change_event()
+        self._end_update(changed)
 
     def extend(self, second_list):
         """
         Do a List.extend(second_list) like list.extend(second_list)
         """
-        # Duplicate and check
-        a = self.duplicate_in_list()
-        models = []
-        i = len(self)
-        for value in second_list:
-            model = self._type.copy()
-            model._parent = self
-            model._attribute_name = f"[{i}]"
-            model.set(value)
-            a.append(model)
-            models.append(model)
-            i = i + 1
-        self.check(a)
+        changed = self._init_update()
+        try:
+            i = len(self)
+            for value in second_list:
+                model = self._type.copy()
+                model._parent = self
+                model._attribute_name = f"[{i}]"
+                model.set_value(value)
+                self._value.append(model)
+                i = i + 1
+                changed = True
 
-        self._old_value = self.duplicate_in_list()
-        v = GenericType.get_value(self)
-        if not isinstance(v, list):
-            self._value = []
+        except Exception as e:
+            self.get_root().rollback()
+            raise e from e
 
-        self._value.extend(models)
-        # Trigg event "change" to say there is some changements
-        self._trigg_change_event()
+        self._end_update(changed)
 
     def get_value(self):
         """
