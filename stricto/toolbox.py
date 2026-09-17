@@ -138,7 +138,7 @@ def validation_parameters(f: Callable) -> Callable:
 
             target_type = f.__annotations__.get(parameter_name)
 
-            # print(f"must check {parameter_name} is {target_type} {type(target_type)} {index} {args}?")
+            # print(f"must check {parameter_name} is {target_type} {type(target_type)} {index} ?")
 
             if index >= len(args):
                 continue

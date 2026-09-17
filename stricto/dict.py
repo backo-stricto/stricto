@@ -478,6 +478,10 @@ class Dict(GenericType):
 
         # The index_or_slice is actually ignored.
         key, sub_index_or_slice = sel.pop()
+        if not key:
+            if sel.empty():
+                return self
+            return None
 
         if key in self._keys:
             v = self.__dict__[key]

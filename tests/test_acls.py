@@ -113,7 +113,7 @@ class TestACLS(unittest.TestCase):
         self.assertFalse(l.accept("tata.fr"))
 
     def test_acl_with_values(self):
-        """notch and not whitelist"""
+        """not whitelist"""
 
         l = AccessControlList(
             [

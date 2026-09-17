@@ -6,11 +6,11 @@ from .toolbox import get_content, get_class_names_hierachie
 
 
 class Model:
-    """ 
-    The description of meta datas 
+    """
+    The description of meta datas
     """
 
-    def __init__( #pylint: disable=too-many-arguments, too-many-positional-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         t: type,
         desc: str,

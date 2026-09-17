@@ -259,6 +259,7 @@ class List(
                     continue
                 l.append(obj.get_selectors(None, sel.copy()))
             return l
+
         return i.get_selectors(None, sel)
 
     def clear(self):
