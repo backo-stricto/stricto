@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.6] - 2026-09-17
+
+* Fix :
+  * bug fix empty selector issues on Dict
+* Internal :
+  * refactoring ACLs, Adding base for futur Model class
+  * moving github actions to uv
+  * matrix python test on branch main for CI/CD
+  
 ## [0.2.5] - 2026-08-24
 
 * Fix :
