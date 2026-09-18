@@ -1,4 +1,4 @@
-# pylint: disable=duplicate-code, pointless-statement
+# pylint: disable=duplicate-code, pointless-statement, too-many-lines
 """
 test for Dict()
 """
@@ -40,11 +40,8 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         test a require only
         """
-        a = Dict({"b": Int(), "c": Int(require=True)})
+        a = Dict({"b": Int(), "c": Int(require=True, default=0)})
 
-        with self.assertRaises(SConstraintError) as e:
-            a.set({"b": 2})
-        self.assertEqual(e.exception.to_string(), '$.c: Cannot be empty "None"')
         with self.assertRaises(SConstraintError) as e:
             a.set({"b": 2, "c": None})
         self.assertEqual(e.exception.to_string(), '$.c: Cannot be empty "None"')
@@ -452,8 +449,53 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         with self.assertRaises(SSyntaxError) as e:
             a.c = 22
         self.assertEqual(
-            e.exception.to_string(), "$.c too much reccursion in compute value."
+            e.exception.to_string(), "$.b too much reccursion in compute value."
         )
+
+    def test_auto_set_listen_on_change(self):
+        """
+        Test autoset for a dict
+        """
+        a = Dict(
+            {
+                "b": Int(default=0, set=(lambda o: o.c + o.d + 1, "$.c")),
+                "c": Int(default=1),
+                "d": Int(default=0),
+            }
+        )
+        a.c = 22
+        self.assertEqual(a.b.get_value(), 23)
+        # Dont recompute because we listen only on $.c
+        a.d = 2
+        self.assertEqual(a.b.get_value(), 23)
+        a = Dict(
+            {
+                "b": Int(default=0, set=(lambda o: o.c + o.d + 1, ["$.e", "$.c"])),
+                "c": Int(default=1),
+                "d": Int(default=0),
+            }
+        )
+        a.c = 22
+        self.assertEqual(a.b.get_value(), 23)
+        # Dont recompute because we listen only on $.c
+        a.d = 2
+        self.assertEqual(a.b.get_value(), 23)
+
+    def test_auto_set_rewrite(self):
+        """
+        Test autoset for a dict
+        """
+        a = Dict(
+            {
+                "b": Int(default=0, set=(lambda o: o.c + o.d + 1, "$.c")),
+                "c": Int(default=1),
+                "d": Int(default=0),
+            }
+        )
+        a.b = 33
+        self.assertEqual(a.b.get_value(), 33)
+        a.c = 12
+        self.assertEqual(a.b.get_value(), 13)
 
     def no_test_auto_set_reflexive(self):
         """
@@ -881,19 +923,22 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
             return False
 
         d = Dict({"a": Int(max=99), "b": Int(max=99)}, constraint=must_a_be_above_b)
-        # with self.assertRaises(SConstraintError) as e:
-        #     self.assertEqual(d.check({"a": 4, "b": 5}), None)
-        # self.assertEqual(
-        #     e.exception.to_string(),
-        #     "$: Constraint not validated for value=\"{'a': 4, 'b': 5}\"",
-        # )
-        # self.assertEqual(d.check({"a": 6, "b": 5}), None)
         with self.assertRaises(SConstraintError) as e:
             d.set({"a": 4, "b": 5})
         self.assertEqual(
             e.exception.to_string(),
             "$: Constraint not validated for value=\"{'a': 4, 'b': 5}\"",
         )
+
+    def test_check_value_direct(self):
+        """
+        Test check value ( b > a )
+        """
+        d = Dict({"a": Int(), "b": String()})
+        d.set_value({"a": 1, "b": 42})
+        with self.assertRaises(STypeError) as e:
+            d.b.check(42)
+        self.assertEqual(e.exception.to_string(), '$.b: Must be a string (value="42")')
 
     def test_check_value(self):
         """

@@ -19,6 +19,7 @@ from .error import (
     SAttributeError,
     SError,
 )
+from .change import ChangeHandler
 from .permissions import Permissions
 from .selector import Selector
 from .event import EVENT_MANAGER
@@ -133,9 +134,10 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         self._json_path_separator = "."
         self._value = None
         self._old_value = None
+        self._changes: ChangeHandler = None
         self._transform = None
-        self._description = options.get("description")
-        self._views = options.get("views").copy()
+        self._description: str = options.get("description")
+        self._views: list[str] = options.get("views").copy()
         self._not_none = options.get("require")
 
         self._union = options.get("union")
@@ -170,12 +172,20 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # on change trigger
         self._on_change = options.get("onchange")
 
-        # the  value is computed. Set the event "changed" for that
+        # the  value is computed.
         self._auto_set = options.get("set")
+
+        # By default, whe do not save (see backo) computed values
+        if self._auto_set and "!save" not in self._views and "save" not in self._views:
+            self._views.append("!save")
 
         # Set the default value
         # the value is with a default as a function. Set the event "copied" for that
         self._default = options.get("default")
+
+        if self._not_none and self._default is None:
+            raise SSyntaxError("Cannot add option required= without a default=")
+
         if self._default is not None:
             self.set_default_value()
 
@@ -764,6 +774,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         result.__dict__["_permissions"] = copy.copy(self._permissions)
         result._parent = self._parent
         result._attribute_name = self._attribute_name
+        result._changes = None
         result._default = self._default
         result._event_id = EVENT_MANAGER.generate_uniq_id()
 
@@ -807,10 +818,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             except Exception as e:  # pylint: disable=broad-exception-caught
                 raise SError(e, self.path_name(), json=corrected_value) from e
 
-        # Check correct type or raise an Error
-        # if corrected_value is not None:
-        #    self.check_type(corrected_value)
-
         if corrected_value == self._value:
             return False
 
@@ -847,7 +854,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         self._value = default_value
         return True
 
-    def compute_value(self) -> bool:
+    def compute_value(self):
         """
         compute the value if needed
 
@@ -856,21 +863,28 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :return: True if changed
         :rtype: bool
         """
+        function = self._auto_set
+        if isinstance(self._auto_set, tuple):
+            function = self._auto_set[0]
+            listen_selectors = self._auto_set[1]
+            if not self.get_root()._changes.has_change_for_me(listen_selectors):
+                return
 
-        if not callable(self._auto_set):
-            return False
+        if not callable(function):
+            return
 
-        value = self._auto_set(self.get_root())
+        value = function(self.get_root())
 
         # Check correct type or raise an Error
         if value is not None:
             self.check_type(value)
 
         if value == self._value:
-            return False
+            return
 
         self._value = value
-        return True
+        self.get_root()._add_change(self.path_name())
+        return
 
     def start_record(self) -> None:
         """
@@ -921,45 +935,40 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # Check constraints
         self.check_constraints(self._value)
 
-    def _init_update(self) -> bool:
-        root = self.get_root()
+    def _add_change(self, path_name: str) -> None:
+        if self._changes:
+            self._changes.add(path_name)
 
-        changed = False
+    def _init_update(self) -> None:
+        root = self.get_root()
+        root._changes = ChangeHandler()
 
         if root._updating_process is False:
             root._updating_process = self._event_id
             root.start_record()
-            c = root.set_default_value()
-            if c is True:
-                changed = True
-        return changed
 
-    def _end_update(self, changed_from_set=False):
+            changed = root.set_default_value()
+            if changed:
+                self.get_root()._add_change(self.path_name())
+
+    def _end_update(self):
         root = self.get_root()
-        changed = changed_from_set
+        root._changes.roll()
         if root._updating_process == self._event_id:
-            changed_while_recompute = True
-            num_of_compute_value = 0
-            while changed_while_recompute is True:
+            while root._changes.has_change():
                 try:
-                    changed_while_recompute = root.compute_value()
-                    if changed_while_recompute is True:
-                        changed = True
+                    root.compute_value()
+                    # if root._changes.has_new_change():
                     root.check_value()
+                    root._changes.roll()
+
                 except Exception as e:
                     root.rollback()
                     raise e from e
 
-                num_of_compute_value += 1
-                if num_of_compute_value > 10:
-                    raise SSyntaxError(
-                        f"{self.path_name()} too much reccursion in compute value."
-                    )
-
             root.end_record()
 
-            if changed is True:
-
+            if root._changes.has_changes_in_session():
                 if self._on_change:
                     self._on_change(self._old_value, self.get_value(), self.get_root())
 
@@ -975,16 +984,16 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :type value: Any
         :raises e: Exception in any cases or error
         """
-        changed = self._init_update()
+        ### changed = self._init_update()
+        self._init_update()
         try:
-            c = self.set_value(value)
-            if c is True:
-                changed = True
-
+            change = self.set_value(value)
+            if change:
+                self.get_root()._add_change(self.path_name())
         except Exception as e:
             self.get_root().rollback()
             raise e from e
-        self._end_update(changed)
+        self._end_update()
 
     def patch_internal(self, op: str, value) -> None:
         """
@@ -1040,14 +1049,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         return obj.patch_internal(op, value)
 
-    def _trigg_change_event(self):
-        if callable(self._on_change):
-            self._on_change(self._old_value, self.get_value(), self.get_root())
-
-        # Trigg a 'change' event to recompute or recheck values
-        # print(f' Trigg change {type(self)} {id(self)} {self.path_name()} root = {self.am_i_root() }')
-        self.trigg("change")
-
     def get_value(self) -> Any:
         """
         return the value in this object
@@ -1098,35 +1099,36 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         """
 
         root = self.get_root()
+        root._changes = ChangeHandler()
 
         if root._updating_process is False:
             root._updating_process = self._event_id
             root.start_record()
-            root.set_default_value()
+            changed = root.set_default_value()
+            if changed:
+                self.get_root()._add_change(self.path_name())
 
         try:
-            self.set_value(value)
+            changed = self.set_value(value)
+            self.check_value()
+            if changed:
+                self.get_root()._add_change(self.path_name())
         except Exception as e:
             root.rollback()
             raise e from e
 
+        root._changes.roll()
         if root._updating_process == self._event_id:
-            changed_while_recompute = True
-            num_of_compute_value = 0
-            while changed_while_recompute is True:
+            while root._changes.has_change():
                 try:
-                    changed_while_recompute = root.compute_value()
+                    root.compute_value()
+                    # if root._changes.has_new_change():
                     root.check_value()
+                    root._changes.roll()
+
                 except Exception as e:
                     root.rollback()
                     raise e from e
-
-                num_of_compute_value += 1
-                if num_of_compute_value > 10:
-                    root.rollback()
-                    raise SSyntaxError(
-                        f"{self.path_name()} too much reccursion in compute value."
-                    )
 
             root.rollback()
 

@@ -266,16 +266,17 @@ class List(
         """
         Do List.clear() as list.clear() (with checks)
         """
-        changed = self._init_update()
+        self._init_update()
         try:
-            self._value.clear()
-            changed = True
+            if self._value:
+                self._value.clear()
+                self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def duplicate_in_list(self):
         """
@@ -305,7 +306,7 @@ class List(
         """
         Do a list.insert()
         """
-        changed = self._init_update()
+        self._init_update()
         try:
             model = self._type.copy()
             model._parent = self
@@ -313,19 +314,19 @@ class List(
             model.set_value(value)
             self._value.insert(key, model)
             self.reset_attribute_name()
-            changed = True
+            self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def __setitem__(self, key, value):
         """
         Do a list[key] = value
         """
-        changed = self._init_update()
+        self._init_update()
         try:
             if isinstance(key, slice):
                 if not isinstance(value, (list, List)):
@@ -347,30 +348,31 @@ class List(
 
             else:
                 v = self._value[key]
-                v.set_value(value)
-                changed = True
+                changed = v.set_value(value)
+                if changed:
+                    self.get_root()._add_change(v.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def __delitem__(self, key):
         """
         Do a del (list[key])
         """
-        changed = self._init_update()
+        self._init_update()
         try:
             self._value.__delitem__(key)
             self.reset_attribute_name()
-            changed = True
+            self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def sort(self, **kwarg):
         """
@@ -382,17 +384,17 @@ class List(
         """
         Do a List.pop() like list.pop()
         """
-        changed = self._init_update()
+        self._init_update()
         try:
             popped = self._value.pop(key)
             self.reset_attribute_name()
-            changed = True
+            self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
         return popped
 
@@ -400,24 +402,24 @@ class List(
         """
         Do a List.remove(value) like list.remove(value)
         """
-        changed = self._init_update()
+        self._init_update()
         try:
             self._value.remove(value)
             self.reset_attribute_name()
-            changed = True
+            self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def append(self, value):
         """
         Do a List.append(value) like list.append(value)
         """
 
-        changed = self._init_update()
+        self._init_update()
         try:
             model = self._type.copy()
             model._parent = self
@@ -425,19 +427,19 @@ class List(
             model.set_value(value)
             self._value.append(model)
             self.reset_attribute_name()
-            changed = True
+            self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def extend(self, second_list):
         """
         Do a List.extend(second_list) like list.extend(second_list)
         """
-        changed = self._init_update()
+        self._init_update()
         try:
             i = len(self)
             for value in second_list:
@@ -447,13 +449,14 @@ class List(
                 model.set_value(value)
                 self._value.append(model)
                 i = i + 1
-                changed = True
+
+            self.get_root()._add_change(self.path_name())
 
         except Exception as e:
             self.get_root().rollback()
             raise e from e
 
-        self._end_update(changed)
+        self._end_update()
 
     def get_value(self):
         """

@@ -91,10 +91,6 @@ class TestString(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         String not null
         """
-        a = String(require=True)
-        with self.assertRaises(SConstraintError) as e:
-            a.set(None)
-        self.assertEqual(e.exception.to_string(), '$: Cannot be empty "None"')
         a = String(required=True, default="")
         with self.assertRaises(SConstraintError) as e:
             a.set(None)
@@ -147,23 +143,23 @@ class TestString(unittest.TestCase):  # pylint: disable=too-many-public-methods
         def brutal(value, o) -> str:  # pylint: disable=unused-argument
             return "YOLO"
 
-        a = String(required=True, transform=brutal)
+        a = String(required=True, default="", transform=brutal)
         a.set("toto")
         self.assertEqual(a.get_value(), "YOLO")
 
-        a = Dict({"yo": String(required=True, transform=brutal)})
+        a = Dict({"yo": String(required=True, default="", transform=brutal)})
         a.yo = "toto"
         self.assertEqual(a.yo, "YOLO")
 
         a.set({"yo": "toto"})
         self.assertEqual(a.yo, "YOLO")
 
-        a = List(String(required=True, transform=brutal))
+        a = List(String(required=True, default="", transform=brutal))
         a.set(["toto", "tutu"])
         self.assertEqual(a[0], "YOLO")
         self.assertEqual(a[1], "YOLO")
 
-        a = Dict({"yo": List(String(required=True, transform=brutal))})
+        a = Dict({"yo": List(String(required=True, default="", transform=brutal))})
         a.set({"yo": ["toto", "tutu"]})
         self.assertEqual(a.yo[0], "YOLO")
         self.assertEqual(a.yo[1], "YOLO")

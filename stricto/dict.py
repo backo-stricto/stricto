@@ -215,6 +215,7 @@ class Dict(GenericType):
             "root",
             "_parent",
             "_attribute_name",
+            "_changes",
             "_event_id",
             "_default",
             "_old_value",

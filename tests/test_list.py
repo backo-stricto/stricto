@@ -445,6 +445,12 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
             "$: duplicate value in list (value=\"['Ford', 'Ford', 'Volvo']\")",
         )
         with self.assertRaises(SConstraintError) as e:
+            a[1].set("Ford")
+        self.assertEqual(
+            e.exception.to_string(),
+            "$: duplicate value in list (value=\"['Ford', 'Ford', 'Volvo']\")",
+        )
+        with self.assertRaises(SConstraintError) as e:
             a.set(a + ["BMW", "yolo"])
         self.assertEqual(
             e.exception.to_string(),
