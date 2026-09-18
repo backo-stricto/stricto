@@ -246,7 +246,7 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
                     changed = True
         return changed
 
-    def compute_value(self) -> bool:
+    def compute_value(self) -> bool:  # pylint: disable=too-many-branches
         """compute the value if needed
 
         :return: True if changed
@@ -260,19 +260,18 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
             if value is not None:
                 self.check_type(value)
 
-                vlist=[]
+                vlist = []
                 for index, val in enumerate(value):
                     v = self._set_element_value(  # pylint: disable=assignment-from-none
                         val, index
                     )
                     vlist.append(v)
 
-
                 if vlist is None and self._value is None:
                     changed = False
-                elif type(vlist) != type( self._value):
+                elif type(vlist) != type(self._value):
                     changed = True
-                elif len(vlist) != len( self._value ):
+                elif len(vlist) != len(self._value):
                     changed = True
                 else:
                     for index, val in enumerate(vlist):

@@ -558,8 +558,9 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         a = Dict(
             {
-                "b": List(Int(),
-                    set=lambda o: [ o.e, o.e+1, o.e+2 ],
+                "b": List(
+                    Int(),
+                    set=lambda o: [o.e, o.e + 1, o.e + 2],
                 ),
                 "e": Int(default=0),
             }
