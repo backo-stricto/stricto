@@ -260,15 +260,27 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
             if value is not None:
                 self.check_type(value)
 
-                self._value = []
-                index = 0
-                for val in value:
+                vlist=[]
+                for index, val in enumerate(value):
                     v = self._set_element_value(  # pylint: disable=assignment-from-none
                         val, index
                     )
-                    self._value.append(v)
-                    index = index + 1
+                    vlist.append(v)
+
+
+                if vlist is None and self._value is None:
+                    changed = False
+                elif type(vlist) != type( self._value):
                     changed = True
+                elif len(vlist) != len( self._value ):
+                    changed = True
+                else:
+                    for index, val in enumerate(vlist):
+                        if self._value[index] != val:
+                            changed = True
+                            break
+
+                self._value = vlist
 
         # compute defaults for childs
         if self._value is not None:

@@ -551,3 +551,22 @@ class TestList(unittest.TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(len(a.bb), 1)
         a.patch("replace", "$.bb", ["hey", "gros"])
         self.assertEqual(len(a.bb), 2)
+
+    def test_auto_set_sub_list(self):
+        """
+        Test autoset for a list
+        """
+        a = Dict(
+            {
+                "b": List(Int(),
+                    set=lambda o: [ o.e, o.e+1, o.e+2 ],
+                ),
+                "e": Int(default=0),
+            }
+        )
+        self.assertEqual(repr(a), "{'b': None, 'e': 0}")
+        a.e = 22
+        self.assertEqual(repr(a), "{'b': [22, 23, 24], 'e': 22}")
+        self.assertEqual(type(a.b[0]), Int)
+        self.assertEqual(type(a.b[1]), Int)
+        self.assertEqual(type(a.b[2]), Int)
