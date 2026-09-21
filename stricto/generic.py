@@ -864,16 +864,18 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         :rtype: bool
         """
         function = self._auto_set
+        listening_selectors = None
+        root = self.get_root()
         if isinstance(self._auto_set, tuple):
             function = self._auto_set[0]
-            listen_selectors = self._auto_set[1]
-            if not self.get_root()._changes.has_change_for_me(listen_selectors):
-                return
+            listening_selectors = self._auto_set[1]
+        if not root._changes.has_change_for_me(listening_selectors, self.path_name()):
+            return
 
         if not callable(function):
             return
 
-        value = function(self.get_root())
+        value = function(root)
 
         # Check correct type or raise an Error
         if value is not None:
@@ -883,7 +885,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             return
 
         self._value = value
-        self.get_root()._add_change(self.path_name())
+        root._add_change(self.path_name())
         return
 
     def start_record(self) -> None:

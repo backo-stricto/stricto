@@ -445,7 +445,12 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         Test autoset for a dict
         """
-        a = Dict({"b": Int(default=0, set=lambda o: o.b + 1), "c": Int(default=1)})
+        a = Dict(
+            {
+                "b": Int(default=0, set=lambda o: o.c + 1),
+                "c": Int(default=1, set=lambda o: o.b + 1),
+            }
+        )
         with self.assertRaises(SSyntaxError) as e:
             a.c = 22
         self.assertEqual(

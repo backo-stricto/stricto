@@ -318,19 +318,35 @@ from stricto import Dict, Int, String
 
 a=Dict({
     "b" : Int( default = 0, set=lambda o: o.c+1 ),
-    "d" : Int( default = 0, set=(lambda o: o.b+1) ), 
+    "d" : Int( default = 0, set=lambda o: o.b+1 ), 
     "c" : Int( ),
 })
 
-# "b" and "d" cannot be modified by hand. the are recalculated every time another value 
+# "b" and "d" are recalculated every time another value 
 # change in the Dict.
-
-a.b = 3 # -> raise an error
 
 a.c = 2
 print(a.b) # -> 3
 print(a.d) # -> 4
 ```
+
+You can specify changes you are listen for to avoid recomputation. In the example below. if you change ```a.e```, nothing will be recomputed.
+
+
+```python
+# example
+from stricto import Dict, Int, String
+
+a=Dict({
+    "b" : Int( default = 0, set=(lambda o: o.c+1, '$.c') ),
+    "c" : Int( ),
+    "d" : Int( default = 0, set=(lambda o: o.b+o.c, [ '$.b', '$.c' ]) ), 
+    "e" : Int( ),
+})
+
+* ```a.b``` will only listen to change on `$.c`
+* ```a.d``` will only listen to change on `$.c` or `$.b`
+
 
 ### constraints
 It allows to define a function that checks whether the constraint on the attribute's value is respected.
@@ -622,24 +638,22 @@ any object can listen to an event and a source an trigg a function.
 
 The main usage is :
 
-`on [ (event_name, function, source ) ]`
+`on [ (event_name, function ) ]`
 
 with source as a path or a list of path
 
 ```python
 
-user=Dict({
-    "dice1" : Int( default=1, on=[('roll' , random)] ),
-    "dice2" : Int( default=1, on=[('roll' , random, '$' )] ),
-    "dice3" : Int( default=1, on=[('roll' , random, '$.dice1' )] ),
-    "dice4" : Int( default=1, on=[('roll' , random, ['$.dice2', '$dice3'] )] ),
+casino=Dict({
+    "name" : String(),
+    "dice1" : Int( default=1, on=[('roll' , random )] ),
+    "dice2" : Int( default=1, on=[('roll' , random )] ),
+    "dice3" : Int( default=1, on=[('roll' , random )] ),
+    "dice4" : Int( default=1, on=[('roll' , random )] ),
 })
 
-user.set({ "name" : "dice1and2" })
-user.trigg('roll') -> trigg random() on $.dice1 and $.dice2
-user.dice1.trigg('roll') -> trigg random() on $.dice3
-user.dice2.trigg('roll') -> trigg random() on $.dice4
-user.dice3.trigg('roll') -> trigg random() on $.dice4
+casino.set({ "name" : "dice1and2" })
+casino.trigg('roll') -> trigg random() on all dices
 
 ```
 

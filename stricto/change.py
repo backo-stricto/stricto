@@ -41,13 +41,23 @@ class ChangeHandler:
     def __repr__(self):
         return f"ChangeHandler changes=[{ ','.join(self._changes.keys())}], new=[{ ','.join(self._new_changes.keys())}]"
 
-    def has_change_for_me(self, path_name: str | list[str]):
+    def has_change_for_me(
+        self, listening_selectors: str | list[str] | None, my_path_name: str
+    ):
         """
         return True if some change for me
+
         """
-        if isinstance(path_name, str):
-            return path_name in self._changes
-        for p in path_name:
+        # The GenericType is listening on every changements.
+        # So drop only if changements comes from itself.
+        if listening_selectors is None:
+            if len(self._changes) == 1 and my_path_name in self._changes:
+                return False
+            return True
+
+        if isinstance(listening_selectors, str):
+            return listening_selectors in self._changes
+        for p in listening_selectors:
             if p in self._changes:
                 return True
         return False
