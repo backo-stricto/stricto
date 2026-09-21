@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.8] - 2026-09-21
+
+* Feature
+  * add selector to listen in set= options. to avoid redoing computation
+  * set= field are automaticaly added into "!save" view by default
+* BREAKING CHANGE 
+  * required= field must be with a default=
+
 ## [0.2.7] - 2026-09-18
 
 * Fix :
