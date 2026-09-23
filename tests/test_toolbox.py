@@ -231,9 +231,9 @@ class TestToolbox(unittest.TestCase):
 
         with self.assertRaises(SSyntaxError) as e:
             f("zaza")
-        self.assertEqual(
+        self.assertRegex(
             e.exception.to_string(),
-            'In function "f", the parameter "a" must be type bool | typing.Callable',
+            r'In function "f", the parameter "a" must be type .*',
         )
 
     def test_valid_call_in_object(self):

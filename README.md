@@ -339,7 +339,7 @@ from stricto import Dict, Int, String
 
 a=Dict({
     "b" : Int( default = 0, set=(lambda o: o.c+1, '$.c') ),
-    "c" : Int( ),
+    "c" : Int( default = 1 ),
     "d" : Int( default = 0, set=(lambda o: o.b+o.c, [ '$.b', '$.c' ]) ), 
     "e" : Int( ),
 })
@@ -609,6 +609,14 @@ a.patch( 'replace', '$.name', "Jenny" )
 
 A stricto object can be trigged by custom events.
 
+any object can listen to an event and a source an trigg a function. 
+
+The main usage is :
+
+`on [ (event_name, function ) ]`
+
+
+
 ### Example
 ```python
 import random
@@ -618,44 +626,20 @@ def random( event_name, root, me ):
     me.set(random.randint(1, 6))
 
 
-user=Dict({
+casino=Dict({
     "name" : String(),
     "dice1" : Int( default=1, on=[('roll' , random)] ),
     "dice2" : Int( default=1, on=[ ('roll' , random)] ),
 })
 
 
-user.set({ "name" : "dice1and2" })
-# Later
-user.trigg('roll')
-user.dice1 # -> A number 1-6
-user.dice2 # -> A number 1-6
-```
-
-### general case
-
-any object can listen to an event and a source an trigg a function. 
-
-The main usage is :
-
-`on [ (event_name, function ) ]`
-
-with source as a path or a list of path
-
-```python
-
-casino=Dict({
-    "name" : String(),
-    "dice1" : Int( default=1, on=[('roll' , random )] ),
-    "dice2" : Int( default=1, on=[('roll' , random )] ),
-    "dice3" : Int( default=1, on=[('roll' , random )] ),
-    "dice4" : Int( default=1, on=[('roll' , random )] ),
-})
-
 casino.set({ "name" : "dice1and2" })
-casino.trigg('roll') -> trigg random() on all dices
-
+# Later
+casino.trigg('roll')
+casino.dice1 # -> A number 1-6
+casino.dice2 # -> A number 1-6
 ```
+
 
 ### bundled events
 
