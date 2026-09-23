@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.9] - 2026-09-23
+
+* internal
+  * fix python matrix version bug in CI
+* Doc
+  * update README for events and set=
+
 ## [0.2.8] - 2026-09-21
 
 * Feature
