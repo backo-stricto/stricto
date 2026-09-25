@@ -140,7 +140,7 @@ class TestString(unittest.TestCase):  # pylint: disable=too-many-public-methods
         test transform
         """
 
-        def brutal(value, o) -> str:  # pylint: disable=unused-argument
+        def brutal(_o, _value, _old_value) -> str:  # pylint: disable=unused-argument
             return "YOLO"
 
         a = String(required=True, default="", transform=brutal)

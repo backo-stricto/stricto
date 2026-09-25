@@ -628,7 +628,9 @@ class Dict(GenericType):
         corrected_value = value.get_value() if isinstance(value, GenericType) else value
 
         if callable(self._transform):
-            corrected_value = self._transform(corrected_value, self.get_root())
+            corrected_value = self._transform(
+                self.get_root(), corrected_value, self._old_value
+            )
 
         if isinstance(corrected_value, str):
             try:

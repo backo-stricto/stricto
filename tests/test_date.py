@@ -20,7 +20,7 @@ from stricto import (
 )
 
 
-def strptime(value, o):  # pylint: disable=unused-argument
+def strptime(_o, value, _old_value):
     """
     return the value if par, or value +1
     """
@@ -31,7 +31,7 @@ def strptime(value, o):  # pylint: disable=unused-argument
     return None
 
 
-def check_before_june(value, o):  # pylint: disable=unused-argument
+def check_before_june(_o, value, _old_value) -> bool:
     """
     return true if pair
     """

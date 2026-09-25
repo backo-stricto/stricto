@@ -922,7 +922,7 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
     def test_dict_constraint(self):
         """check a constraint on the dict itself"""
 
-        def must_a_be_above_b(value, o):  # pylint: disable=unused-argument
+        def must_a_be_above_b(_o, value, _old_value):  # pylint: disable=unused-argument
             if value["a"] > value["b"]:
                 return True
             return False
@@ -950,7 +950,7 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         Test check value ( b > a )
         """
 
-        def must_be_above_a(value, o):
+        def must_be_above_a(o, value, _old_value):
             if o.a == None:  # pylint: disable=singleton-comparison
                 return True
 

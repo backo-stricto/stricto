@@ -9,7 +9,7 @@ from stricto import STypeError, SConstraintError
 from ..kparse import Kparse  # pylint: disable=relative-beyond-top-level
 
 
-def trunk_microseconds(value, o):  # pylint: disable=unused-argument
+def trunk_microseconds(_o, value, _old_value):  # pylint: disable=unused-argument
     """
     trunk microseconds
     """

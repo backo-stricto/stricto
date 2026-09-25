@@ -8,14 +8,14 @@ import unittest
 from stricto import Int, SConstraintError, STypeError, SAttributeError
 
 
-def pair_only(value, o):  # pylint: disable=unused-argument
+def pair_only(_o, value, _old_value):  # pylint: disable=unused-argument
     """
     return the value if par, or value +1
     """
     return value + 1 if value % 2 else value
 
 
-def check_pair(value, o):  # pylint: disable=unused-argument
+def check_pair(_o, value, _old_value):  # pylint: disable=unused-argument
     """
     return true if pair
     """
@@ -135,7 +135,9 @@ class TestInt(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         Test transform with a lambda
         """
-        a = Int(transform=lambda value, o: value + 1 if value % 2 else value)
+        a = Int(
+            transform=lambda _o, value, _old_value: value + 1 if value % 2 else value
+        )
         a.set(10)
         self.assertEqual(a, 10)
         a.set(9)

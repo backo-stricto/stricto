@@ -284,12 +284,13 @@ Please refer to [transform function](#types)
 # example
 from stricto import Dict, Int, String
 
-def upper(value, o):
+def upper(_o, value, _old_value):
     """
     transform the value into upper
 
+    _o     : the full object
     value : the current value given ("worldcompagny" in this example).
-    o     : the full object
+    _old_value : the previous value 
     """
     return value.upper()
 
@@ -357,9 +358,13 @@ It allows to define a function that checks whether the constraint on the attribu
 from stricto import Dict, Int, String
 
 
-def check_pair(value, o): # pylint: disable=unused-argument
+def check_pair(_o, value, _old_value): 
     """
     return true if pair
+
+    o: the root object
+    value: the value of this object
+    _old_value : the previous value
     """
     return not value % 2
 

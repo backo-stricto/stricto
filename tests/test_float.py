@@ -9,14 +9,14 @@ import math
 from stricto import Float, STypeError, SConstraintError
 
 
-def pair_only(value, o):  # pylint: disable=unused-argument
+def pair_only(_o, value, _old_value):
     """
     return the value if par, or value +1
     """
     return value + 1.0 if value % 2 else value
 
 
-def check_pair(value, o):  # pylint: disable=unused-argument
+def check_pair(_o, value, _old_value):
     """
     return true if pair
     """
@@ -146,7 +146,9 @@ class TestFloat(unittest.TestCase):
         """
         Test transform with a lambda
         """
-        a = Float(transform=lambda value, o: value + 1.0 if value % 2 else value)
+        a = Float(
+            transform=lambda _o, value, _old_value: value + 1.0 if value % 2 else value
+        )
         a.set(10.0)
         self.assertEqual(a, 10.0)
         a.set(9.0)

@@ -147,6 +147,15 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             else [options.get("constraints")]
         )
 
+        # ---- constraints as functions
+        for constraint in self._constraints:
+            if callable(constraint) is not True:
+                raise SSyntaxError(
+                    "{0}: Constraint not callable",
+                    self.path_name(),
+                    constraint=constraint,
+                )
+
         # for events
         on_events = options.get("on")
 
@@ -810,7 +819,9 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         corrected_value = value.get_value() if isinstance(value, GenericType) else value
 
         if callable(self._transform):
-            corrected_value = self._transform(corrected_value, self.get_root())
+            corrected_value = self._transform(
+                self.get_root(), corrected_value, self._old_value
+            )
 
         if isinstance(corrected_value, str):
             try:
@@ -1256,16 +1267,9 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 )
 
         # ---- constraints as functions
+        root = self.get_root()
         for constraint in self._constraints:
-            if callable(constraint) is not True:
-                raise SSyntaxError(
-                    "{0}: Constraint not callable",
-                    self.path_name(),
-                    constraint=constraint,
-                )
-            root = self.get_root()
-
-            r = constraint(value, root)
+            r = constraint(root, value, self._old_value)
             if r is False:
                 raise SConstraintError(
                     '{0}: Constraint not validated for value="{value}"',
