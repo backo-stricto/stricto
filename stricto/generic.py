@@ -192,8 +192,8 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # the value is with a default as a function. Set the event "copied" for that
         self._default = options.get("default")
 
-        if self._not_none and self._default is None:
-            raise SSyntaxError("Cannot add option required= without a default=")
+        #if self._not_none and self._default is None:
+        #    raise SSyntaxError("Cannot add option required= without a default=")
 
         if self._default is not None:
             self.set_default_value()
@@ -830,6 +830,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
                 raise SError(e, self.path_name(), json=corrected_value) from e
 
         if corrected_value == self._value:
+            self.check_value()
             return False
 
         self._value = corrected_value
