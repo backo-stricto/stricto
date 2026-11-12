@@ -43,8 +43,10 @@ class TestTuple(unittest.TestCase):
         """
         Test equality()
         """
+
         a = Tuple((Bool(), Int()))
         self.assertEqual(a, a)
+
         self.assertEqual(a.get_root(), a)
         a.set((True, 22))
         self.assertEqual(a[0].get_root(), a)
@@ -57,6 +59,10 @@ class TestTuple(unittest.TestCase):
         a.set((True, 22))
         self.assertEqual(a, b)
         self.assertNotEqual(a, b[0])
+
+        a = Tuple((Bool(), Dict({"i": Bool()})))
+        a.set((True, {"i": False}))
+        self.assertEqual(a, a)
 
     def test_add(self):
         """

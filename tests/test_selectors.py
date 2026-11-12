@@ -14,6 +14,7 @@ from stricto import (
     Tuple,
     STypeError,
     SAttributeError,
+    SSyntaxError,
     SFilter,
     Operator,
 )
@@ -32,19 +33,41 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
 
         self.event_name = None
 
-    def test_selectors(self):
+    def test_selors(self):
         """
-        test selectors
+        test selors
         """
         sel = Selector("$.name")
-        self.assertEqual(sel.pop(), ("$", None))
-        self.assertEqual(sel.pop(), ("name", None))
-        sel = Selector("$.name[0]")
-        self.assertEqual(sel.pop(), ("$", None))
-        self.assertEqual(sel.pop(), ("name", "0"))
+        self.assertEqual(repr(sel), "Selector([SI($/None/None), SI(name/None/None)])")
+        self.assertEqual(repr(sel.pop()), "SI($/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(name/None/None)")
+        self.assertTrue(sel.empty())
+
+        sel = Selector("$.name[0].a")
+        self.assertEqual(repr(sel.pop()), "SI($/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(name/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(None/0/None)")
+        self.assertEqual(repr(sel.pop()), "SI(a/None/None)")
+        self.assertTrue(sel.empty())
+
+        sel = Selector("$.name.")
+        self.assertEqual(repr(sel.pop()), "SI($/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(name/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(/None/None)")
+        self.assertTrue(sel.empty())
+
         sel = Selector("$.name[1:2]")
-        self.assertEqual(sel.pop(), ("$", None))
-        self.assertEqual(sel.pop(), ("name", "1:2"))
+        self.assertEqual(repr(sel.pop()), "SI($/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(name/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(None/None/slice(1, 2, None))")
+        self.assertTrue(sel.empty())
+
+        sel = Selector("$.name[1][2]")
+        self.assertEqual(repr(sel.pop()), "SI($/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(name/None/None)")
+        self.assertEqual(repr(sel.pop()), "SI(None/1/None)")
+        self.assertEqual(repr(sel.pop()), "SI(None/2/None)")
+        self.assertTrue(sel.empty())
 
     def test_selectors_equality(self):
         """
@@ -66,20 +89,11 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
         test selectors gt
         """
         a = Selector("$.name")
-        self.assertEqual(a > Selector("$"), False)
-        self.assertEqual(Selector("$.b") > a, False)
-        self.assertEqual(a < Selector("$.b"), False)
-        self.assertEqual(a > Selector("$.b"), False)
-        self.assertEqual(a <= Selector("$.b"), False)
-        self.assertEqual(a > Selector("$.name"), False)
-        self.assertEqual(a >= Selector("$.name"), True)
-        self.assertEqual(a <= Selector("$.name"), True)
-        self.assertEqual(a > Selector("$.name.b"), True)
-        self.assertEqual(a > Selector("$.name[0]"), True)
-        self.assertEqual(Selector("$.name[0]") > Selector("$.name[0]"), False)
-        self.assertEqual(Selector("$.name[0]") > Selector("$.name[1]"), False)
-        self.assertEqual(Selector("$.name[0]") > Selector("$.name.toto"), True)
-        self.assertEqual(Selector("$.name.toto") > Selector("$.name[1]"), False)
+        self.assertEqual(a.include(Selector("$")), False)
+        self.assertEqual(Selector("$").include(a), True)
+        self.assertEqual(a.include(Selector("$.b")), False)
+        self.assertEqual(a.include(Selector("$.name")), True)
+        self.assertEqual(a.include(Selector("$.name.b")), True)
 
     def test_empty_selector(self):
         """
@@ -88,7 +102,7 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
         sel = Selector(None)
         self.assertEqual(sel.empty(), True)
         sel = Selector("")
-        self.assertEqual(sel.pop(), ("", None))
+        self.assertEqual(repr(sel.pop()), "SI(/None/None)")
 
     def test_selector_copy(self):
         """
@@ -96,10 +110,9 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
         """
         sel = Selector("$.name")
         sel2 = sel.copy()
-        self.assertEqual(sel.pop(), ("$", None))
-        self.assertEqual(sel.pop(), ("name", None))
-        self.assertEqual(sel2.pop(), ("$", None))
-        self.assertEqual(sel2.pop(), ("name", None))
+        self.assertEqual(sel2, sel)
+        sel.pop()
+        self.assertNotEqual(sel2, sel)
 
     def test_selector_list(self):
         """
@@ -121,7 +134,7 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
         self.assertEqual(isinstance(a.select("$"), List), True)
 
         self.assertEqual(a.select("$[0:2].i"), ["aa", "bb"])
-        self.assertEqual(a.select("$.i"), ["aa", "bb"])
+        self.assertEqual(a.select("$[].i"), ["aa", "bb"])
 
     def test_selector_in_dict(self):
         """
@@ -147,53 +160,35 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
                     "l": [
                         {"i": "fir"},
                         {"i": "sec"},
-                    ]
+                    ],
+                    "t": (1, "top"),
+                    "tt": (2, {"i": "tiptop"}),
                 },
             }
         )
-
-        self.assertEqual(a, a)
-
-        self.assertEqual(a.b.select("$.a"), 12)
-        self.assertEqual(a.a.select("$[ttt].a[tt]"), None)
-        self.assertEqual(a.select("a"), None)
-        self.assertEqual(a.select("$.a"), 12)
-        self.assertEqual(a.select("$.a[blabla]"), None)
-        self.assertEqual(a.select("$.not"), None)
-        self.assertEqual(a.select("$[blabla].a"), None)
-        self.assertEqual(a.select("@.a"), 12)
-        self.assertEqual(a.select("$.a.$.a"), None)
-        self.assertEqual(a.select("$.a.@"), None)
         self.assertEqual(a.select("$"), a)
+        self.assertEqual(a.b.select("$.a"), 12)
+        self.assertEqual(a.select("a"), 12)
+        self.assertEqual(a.select("$.not"), None)
+        self.assertEqual(a.select("@.a"), 12)
+        self.assertEqual(a.select("$.a.$.a"), 12)
+        self.assertEqual(a.select("$.a.@"), 12)
         self.assertEqual(a.select("$.f.d"), None)
         self.assertEqual(type(a.select("$.b.l")), List)
         self.assertEqual(a.select("$.b.l[0].i"), "fir")
         self.assertEqual(a.select("$.b.l[20].i"), None)
-        self.assertEqual(a.select("$.b.l[coucou].i"), None)
         self.assertEqual(a.select("$.b.l[0:2].i"), ["fir", "sec"])
         self.assertEqual(a.select("$.b.l[-1].i"), "sec")
-        self.assertEqual(a.select("$.b.l[].i"), None)
-        self.assertEqual(a.select("$.*.l.i"), ["fir", "sec"])
-        self.assertEqual(a.select("$.*.t[0]"), None)
-        self.assertEqual(a.select("$.b.t[vla]"), None)
-        self.assertEqual(a.select("$.b.t"), None)
-        self.assertEqual(a.select(None), a)
-        a.set(
-            {
-                "a": 12,
-                "b": {"l": None, "t": (12, "aa"), "tt": (22, {"i": "bb"})},
-            }
-        )
+        self.assertEqual(a.select("$.b.l[].i"), ["fir", "sec"])
+        self.assertEqual(a.select("$.b.t[0]"), 1)
+        self.assertEqual(a.select("$.b.t[1]"), "top")
+        self.assertEqual(a.select("$.b.t[2]"), None)
+        self.assertEqual(a.select("$.b.t[]"), [1, "top"])
+        self.assertEqual(a.select("$.b.tt[1].i"), "tiptop")
 
-        # no_ self.assertEqual(a.select("$.b.l"), None)
-        self.assertEqual(a.select("$.b.l[0].i"), None)
-        # no_ self.assertEqual(a.select("$.*.l.i"), None)
-        self.assertEqual(a.select("$.*.t[0]"), 12)
-        self.assertEqual(a.select("$.*.t[1]"), "aa")
-        self.assertEqual(a.select("$.*.t[22]"), None)
-        self.assertEqual(type(a.select("$.b.t")), Tuple)
-        self.assertEqual(a.select("$.b.tt[1].i"), "bb")
-        self.assertEqual(a.select("$.b.tt.i"), ("bb",))
+        with self.assertRaises(SSyntaxError) as e:
+            self.assertEqual(a.select("$.b.t[vla]"), None)
+        self.assertEqual(e.exception.args[0], '"[vla]" is not an index or a slice')
 
     def test_patch(self):
         """

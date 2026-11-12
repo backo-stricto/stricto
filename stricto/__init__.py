@@ -33,7 +33,7 @@ from .extended.ip_network import Ipnetwork
 from .extended.url import Url
 from .permissions import Permissions
 from .extended.complex import Complex
-from .selector import Selector
+from .selector import Selector, SelectorItem
 from .kparse import Kparse
 from .filter import Operator, SFilter
 from .event import EVENT_MANAGER

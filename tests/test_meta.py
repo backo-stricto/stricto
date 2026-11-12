@@ -6,7 +6,7 @@ test for Meta informations()
 # pylint: disable=no-member
 import unittest
 
-from stricto import String, Int, Dict, List, Bool, SSyntaxError, SAttributeError
+from stricto import String, Int, Dict, List, Bool, Tuple, SSyntaxError, SAttributeError
 
 
 class TestMeta(unittest.TestCase):  # pylint: disable=too-many-public-methods
@@ -19,6 +19,49 @@ class TestMeta(unittest.TestCase):  # pylint: disable=too-many-public-methods
         init this tests
         """
         super().__init__(*args, **kwargs)
+
+    def test_model(self):
+        """
+        test a Model
+        """
+        a = Dict(
+            {
+                "name": String(),
+                "age": Int(default=0),
+                "work": Dict(
+                    {
+                        "salary": Int(default=10, can_modify=False),
+                        "maried": Bool(default=False),
+                    },
+                    exists=True,
+                ),
+                "nicknames": List(String()),
+                "sublist": List(Dict({"a": Int()})),
+                "tutu": Tuple((String(), Dict({"a": Int()}), Tuple((Int(), Bool())))),
+            }
+        )
+
+        self.assertIsNone(a.get_my_model(""))
+        self.assertEqual(a.get_my_model("$"), a)
+        self.assertEqual(a.get_my_model("$.name"), a.name)
+        self.assertEqual(a.get_my_model("$.name."), None)
+        self.assertEqual(a.get_my_model("$.notexists."), None)
+        self.assertEqual(a.get_my_model("$.notexists"), None)
+        l = [
+            ("$.name", String),
+            ("$.nicknames", List),
+            ("$.nicknames.", String),
+            ("$.nicknames[0]", String),
+            ("$.sublist[0].a", Int),
+            ("$.work.salary", Int),
+            ("$.tutu", Tuple),
+            ("$.tutu[0]", String),
+            ("$.tutu[1].a", Int),
+            ("$.tutu[2][0]", Int),
+        ]
+        for sec in l:
+            m = a.get_my_model(sec[0])
+            self.assertTrue(isinstance(m, sec[1]))
 
     def test_simple_get_schema(self):
         """

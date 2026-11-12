@@ -1,6 +1,6 @@
 """Module providing the List() Class"""
 
-from typing import Any
+from typing import Any, Self
 from .generic import GenericType
 from .list_and_tuple import ListAndTuple
 from .error import STypeError, SConstraintError
@@ -203,64 +203,22 @@ class List(
     def __getitem__(self, index):
         return GenericType.get_value(self)[index]
 
-    def _parse_slice(self, slice_as_string: str):
-        """
-        Parses a `slice()` from string, like `start:stop:step`.
-        """
-        parts = slice_as_string.split(":")
-        try:
-            if len(parts) == 1:
-                # slice(stop)
-                return int(slice_as_string)
-            if len(parts) == 2:
-                # slice(start,stop)
-                return slice(int(parts[0]), int(parts[1]))
-            if len(parts) == 3:
-                # slice(start,stop,step)
-                return slice(int(parts[0]), int(parts[1]), int(parts[2]))
-        except ValueError:
-            pass
-        return None
+    def get_my_model_by_selector(self, sel: Selector) -> Self:
 
-    def get_selectors(
-        self, index_or_slice: str, sel: Selector
-    ):  # pylint: disable=too-many-return-statements
-        """
-        get with selector as lists
-        """
-
-        v = GenericType.get_value(self)
-        if v is None:
+        if sel is None:
             return None
 
-        if index_or_slice is None:
-            if sel.empty():
-                return self
-            a = []
-            for i in self._value:
-                result = i.get_selectors(None, sel.copy())
-                if result is not None:
-                    a.append(result)
-            return a
+        # The end of the chain
+        if sel.empty():
+            return self
 
-        # With a sel_filter = A slice fir the list
-        sli = self._parse_slice(index_or_slice)
-        try:
-            i = v[sli]
-        except IndexError:
-            return None
-        except TypeError:
-            return None
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_my_model_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_my_model_by_selector(sel)
 
-        if isinstance(i, list):
-            l = []
-            for obj in i:
-                if obj.exists_or_can_read() is False:
-                    continue
-                l.append(obj.get_selectors(None, sel.copy()))
-            return l
-
-        return i.get_selectors(None, sel)
+        return self._type.get_my_model_by_selector(sel)
 
     def clear(self):
         """

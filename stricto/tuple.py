@@ -1,8 +1,7 @@
 """Module providing the Tuple() Class"""
 
 import copy
-import re
-from typing import Any
+from typing import Any, Self
 from .generic import GenericType
 from .list import List
 from .list_and_tuple import ListAndTuple
@@ -109,33 +108,36 @@ class Tuple(ListAndTuple):
             a["sub_types"].append(i.get_current_meta(a))
         return a
 
-    def get_selectors(self, index_or_slice, sel: Selector):
-        """
-        get with selector in tuple
-        """
+    def get_my_model_by_selector(self, sel: Selector) -> Self:
 
-        v = GenericType.get_value(self)
-        if index_or_slice is None:
-            if sel.empty():
-                return self
+        if sel is None:
+            return None
 
-            list_of_result = []
-            for i in v:
-                result = i.get_selectors(None, sel.copy())
-                if result is not None:
-                    list_of_result.append(result)
-            return tuple(list_of_result)
+        # The end of the chain
+        if sel.empty():
+            return self
 
-        if re.match("^[0-9]+$", index_or_slice):
-            if v is None:
-                return None
-            try:
-                sub_object = v[int(index_or_slice)]
-            except IndexError:
-                return None
-            return sub_object.get_selectors(None, sel)
+        # go further
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_my_model_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_my_model_by_selector(sel)
 
-        return None
+        if sel_item.key is not None:
+            return None
+        if sel_item.slice is not None:
+            return None
+        if sel_item.index is None:
+            return None
+
+        sub_model = None
+        try:
+            sub_model = self._schema[sel_item.index]
+        except IndexError:
+            return None
+
+        return sub_model.get_my_model_by_selector(sel)
 
     def get_value(self):
         """
@@ -185,9 +187,27 @@ class Tuple(ListAndTuple):
         """
         equality test tuple
         """
-        v = GenericType.get_value(self)
-        t = None if v is None else tuple(v)
-        return t == self._get_other_value(other)
+        list_of_content = self.get_value()
+
+        o_list = None
+        if isinstance(other, Tuple):
+            o_list = other.get_value()
+        elif isinstance(other, tuple):
+            o_list = other
+
+        if list_of_content is None:
+            return o_list is None
+
+        if not isinstance(o_list, tuple):
+            return False
+
+        if len(list_of_content) != len(o_list):
+            return False
+        for index, v in enumerate(list_of_content):
+            o = o_list[index]
+            if v != o:
+                return False
+        return True
 
     def match(self, other):
         """
@@ -206,9 +226,7 @@ class Tuple(ListAndTuple):
         """
         equality test two objects
         """
-        v = GenericType.get_value(self)
-        t = None if v is None else tuple(v)
-        return t != self._get_other_value(other)
+        return not self.__eq__(other)
 
     def __lt__(self, other):
         """

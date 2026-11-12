@@ -5,6 +5,7 @@ import json
 from typing import Any, Self
 from .generic import GenericType, ViewType
 from .error import SError, SAttributeError
+from .selector import Selector
 from .toolbox import get_content
 
 
@@ -348,3 +349,47 @@ class ListAndTuple(GenericType):  # pylint: disable=too-many-instance-attributes
                 changed = True
 
         return changed
+
+    def get_by_selector(self, sel: Selector) -> Self:
+
+        if sel is None:
+            return None
+
+        # The end of the chain
+        if sel.empty():
+            return self
+
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_by_selector(sel)
+
+        # With a index
+        if sel_item.index is not None:
+            v = None
+            try:
+                v = self._value[sel_item.index]
+            except IndexError:
+                return None
+            if v is None:
+                return None
+            if v.exists_or_can_read():
+                return v.get_by_selector(sel)
+
+        # with a slice
+        elif sel_item.slice is not None:
+            v_list = None
+            try:
+                v_list = self._value[sel_item.slice]
+            except IndexError:
+                return None
+
+            if isinstance(v_list, (list, tuple)):
+                a = []
+                for v in v_list:
+                    if v.exists_or_can_read():
+                        a.append(v.get_by_selector(sel.copy()))
+                return a
+
+        return None

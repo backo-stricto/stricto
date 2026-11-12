@@ -460,48 +460,65 @@ class Dict(GenericType):
             return None
         return v
 
-    def get_selectors(
-        self, index_or_slice, sel: Selector
-    ):  # pylint: disable=too-many-return-statements
+    def get_by_selector(self, sel: Selector) -> Self | None:
         """
-        get with selector as lists
-        selectors_as_list is a list of tuples like
-        ( "a" , 0 ) -> a[0]
-        ( "toto", None ) -> toto
-        """
+        return a sub object by selector
+        (call by :py:meth:`select`)
 
-        # Cannot have index or slice on a dict
-        if index_or_slice:
+        :param sel: The RFC 9535 path descriptor
+        :type sel: Selor
+        :return: the object matched my this selector or None if not this object
+        :rtype: Self | None
+
+        :meta private:
+        """
+        # A sub object behing a generic ? -> No
+        if sel is None:
             return None
 
         if sel.empty():
             return self
 
-        # The index_or_slice is actually ignored.
-        key, sub_index_or_slice = sel.pop()
-        if not key:
-            if sel.empty():
-                return self
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_by_selector(sel)
+
+        key = sel_item.key
+        if key is None:
             return None
 
         if key in self._keys:
             v = self.__dict__[key]
             if v.exists_or_can_read():
-                return v.get_selectors(sub_index_or_slice, sel)
+                return v.get_by_selector(sel)
+
+        return None
+
+    def get_my_model_by_selector(self, sel: Selector) -> Self:
+
+        if sel is None:
             return None
 
-        # Selecing all
-        if key in ("", "*"):
-            a = []
-            for k in self._keys:
-                v = self.__dict__[k]
-                if v.exists_or_can_read():
-                    result = v.get_selectors(sub_index_or_slice, sel.copy())
-                    if result is not None:
-                        a.append(result)
-            if not a:
-                return None
-            return a[0] if len(a) == 1 else a
+        # The end of the chain
+        if sel.empty():
+            return self
+
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_my_model_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_my_model_by_selector(sel)
+
+        key = sel_item.key
+        if key is None:
+            return None
+
+        if key in self._keys:
+            v = self.__dict__[key]
+            if v.exists_or_can_read():
+                return v.get_my_model_by_selector(sel)
 
         return None
 

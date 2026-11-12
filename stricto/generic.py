@@ -192,7 +192,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         # the value is with a default as a function. Set the event "copied" for that
         self._default = options.get("default")
 
-        #if self._not_none and self._default is None:
+        # if self._not_none and self._default is None:
         #    raise SSyntaxError("Cannot add option required= without a default=")
 
         if self._default is not None:
@@ -291,8 +291,8 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             self._transform,
             self._auto_set,
             self._exists,
+            self._attribute_name,
             self._permissions.get_as_dict_of_strings(),
-            self.path_name(),
         )
 
     def get_schema(self) -> dict:
@@ -541,33 +541,71 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
             parent = parent._parent
         return "".join(p)
 
-    def get_selectors(self, index_or_slice: str, sel: Selector) -> Self | None:
+    def get_by_selector(self, sel: Selector) -> Self | None:
         """
-        get with selector a selector
+        get with Selor
         (call by :py:meth:`select`)
 
-        :param self: Description
-        :param index_or_slice: In case of list, index or slice to this list
-        :type index_or_slice: str
         :param sel: The RFC 9535 path descriptor
-        :type sel: Selector
+        :type sel: Selor
         :return: the object matched my this selector or None if not this object
         :rtype: Self | None
 
         :meta private:
         """
 
-        # Cannot have index or slice on a generic
-        if index_or_slice:
-            return None
-
         # A sub object behing a generic ? -> No
         if sel is None:
             return None
+
         if sel.empty():
             return self
 
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_by_selector(sel)
+
         return None
+
+    def get_my_model_by_selector(self, sel: Selector) -> Self:
+        """
+        return the model given by semector
+
+        :param sel: the Selector
+        :type sel: Selector
+        :return: a Generic Object
+        :rtype: Self
+        """
+        # A sub object behing a generic ? -> No
+        if sel is None:
+            return None
+
+        if sel.empty():
+            return self
+
+        sel_item = sel.pop()
+        if sel_item.is_root():
+            return self.get_root().get_my_model_by_selector(sel)
+        if sel_item.is_me():
+            return self.get_my_model_by_selector(sel)
+
+        return None
+
+    def get_my_model(self, selector_as_string: str) -> Self:
+        """
+        Return the model by a Selector as str
+        acording to rfc 9535
+        (https://datatracker.ietf.org/doc/rfc9535/)
+
+        :param selector_as_string: the selectors
+        :type selector_as_string: str
+        :return: _description_
+        :rtype: Self
+        """
+        sel = Selector(selector_as_string)
+        return self.get_my_model_by_selector(sel)
 
     def select(self, selector_as_string: str) -> Self | None:
         """
@@ -587,18 +625,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
 
         """
         sel = Selector(selector_as_string)
-        if sel.empty():
-            return self
-
-        key, sub_index_or_slice = sel.pop()
-
-        if key == "$":
-            return self.get_root().get_selectors(sub_index_or_slice, sel)
-        if key == "@":
-            return self.get_selectors(sub_index_or_slice, sel)
-
-        # Cannot start without "$" or "@"
-        return None
+        return self.get_by_selector(sel)
 
     def multi_select(self, selector_as_list_of_string: list[str]) -> list[Self] | None:
         """

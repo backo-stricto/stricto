@@ -57,9 +57,8 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         a = Dict({"b": Int(), "c": Int(require=True)})
 
         with self.assertRaises(SConstraintError) as e:
-            a.b=2
+            a.b = 2
         self.assertEqual(e.exception.to_string(), '$.c: Cannot be empty "None"')
-
 
         a.set({"b": 2, "c": 3})
 
