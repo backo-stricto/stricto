@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.2] - 2026-11-17
+
+* feature:
+    * add function get_my_model() with path
+    * add function add_to_model() with path
+    * add function remove_from_model() with path
+    * add Sfilter reduce() function
+    * add Sfilter Operator.IGNORE, Operator.FALSE
+
+* internal
+    * Remove Model Object
+ 
 ## [0.3.1] - 2026-10-07
 
 feature:
