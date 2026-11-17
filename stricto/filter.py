@@ -138,7 +138,7 @@ class SFilter:
 
         return result
 
-    def reduce(self) -> SFilter:
+    def reduce(self) -> Self:
         """
         reduce removing the filter
 

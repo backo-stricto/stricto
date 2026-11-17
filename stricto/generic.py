@@ -582,7 +582,7 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         sel = Selector(selector_as_string)
         return self.get_my_model_by_selector(sel)
 
-    def add_to_model(self, selector_as_string: str, model: GenericType) -> None:
+    def add_to_model(self, selector_as_string: str, model: Self) -> None:
         """
         add new element to the model
         """
