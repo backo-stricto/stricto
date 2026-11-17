@@ -5,6 +5,7 @@ test for selectors
 
 # pylint: disable=no-member
 import unittest
+from copy import deepcopy
 from stricto import (
     Selector,
     String,
@@ -307,6 +308,62 @@ class TestSelectors(unittest.TestCase):  # pylint: disable=too-many-public-metho
 
         ms = a.multi_select(["$.a", "$.b.c"])
         self.assertEqual(ms, [12, 1])
+
+    def test_filter_copy(self):
+        """test SFilter copy"""
+        f = SFilter("$.a", Operator.CONTAINS, SFilter("@.i", Operator.EQ, "fir"))
+        ff = deepcopy(f)
+        self.assertEqual(repr(f), repr(ff))
+
+    def test_filter_reduce(self):
+        """test SFilter reduction"""
+        f = SFilter("$.a", Operator.EQ, 12)
+        self.assertEqual(repr(f), repr(f.reduce()))
+
+        f = SFilter(
+            None,
+            Operator.OR,
+            [SFilter("$.a", Operator.EQ, 12), SFilter("$.a", Operator.EQ, 12)],
+        )
+        self.assertEqual(repr(f), repr(f.reduce()))
+
+        f = SFilter(
+            None,
+            Operator.OR,
+            [SFilter("$.a", Operator.EQ, 12), SFilter(None, Operator.TRUE, None)],
+        )
+        self.assertEqual(repr(f.reduce()), 'SFilter("None" Operator.TRUE None)')
+
+        f = SFilter(
+            None,
+            Operator.AND,
+            [SFilter("$.a", Operator.EQ, 12), SFilter(None, Operator.TRUE, None)],
+        )
+        self.assertEqual(repr(f.reduce()), 'SFilter("$.a" Operator.EQ 12)')
+
+        f = SFilter(
+            None,
+            Operator.OR,
+            [SFilter("$.a", Operator.EQ, 12), SFilter(None, Operator.TRUE, None)],
+        )
+        self.assertEqual(repr(f.reduce()), 'SFilter("None" Operator.TRUE None)')
+
+        f = SFilter(
+            None,
+            Operator.AND,
+            [SFilter("$.a", Operator.EQ, 12), SFilter(None, Operator.FALSE, None)],
+        )
+        self.assertEqual(repr(f.reduce()), 'SFilter("None" Operator.FALSE None)')
+
+        f = SFilter(
+            None,
+            Operator.OR,
+            [SFilter("$.a", Operator.EQ, 12), SFilter(None, Operator.FALSE, None)],
+        )
+        self.assertEqual(repr(f.reduce()), 'SFilter("$.a" Operator.EQ 12)')
+
+        f = SFilter(None, Operator.OR, [SFilter(None, Operator.IGNORE, None)])
+        self.assertEqual(repr(f.reduce()), 'SFilter("None" Operator.TRUE None)')
 
     def test_filter(self):
         """test filter"""

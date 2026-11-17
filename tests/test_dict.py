@@ -101,10 +101,10 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         test set with error
         """
         with self.assertRaises(SSyntaxError) as e:
-            Dict({"add_to_model": Int()})
+            Dict({"add_model": Int()})
         self.assertEqual(
             e.exception.to_string(),
-            'Key "add_to_model" is forbidden (already used as method)',
+            'Key "add_model" is forbidden (already used as method)',
         )
         with self.assertRaises(SSyntaxError) as e:
             Dict({"get_value": Int()})
@@ -270,7 +270,7 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         """
         a = Dict({"b": Int(), "c": Int()})
         a.set({"b": 1, "c": 2})
-        a.add_to_model("d", String())
+        a.add_model("d", String())
         a.d = "oh yeah"
         self.assertEqual(a.d, "oh yeah")
         a.remove_model("d")
@@ -285,12 +285,29 @@ class TestDict(unittest.TestCase):  # pylint: disable=too-many-public-methods
         a = Dict({"b": Int(), "c": Int()})
         a.set({"b": 1, "c": 2})
 
-        a.add_to_model("d", Dict({"e": String()}))
+        a.add_model("d", Dict({"e": String()}))
         a.d.e = "oh yeah"
         self.assertEqual(a.d.e, "oh yeah")
         self.assertEqual(a.d._parent, a)
         self.assertEqual(a.d.e._parent, a.d)
         a.remove_model("d")
+        with self.assertRaises(AttributeError) as e:
+            a.d.e = 22
+        self.assertEqual(e.exception.args[0], "'Dict' object has no attribute 'd'")
+
+    def test_modify_schema_with_path(self):
+        """
+        test schema modification
+        """
+        a = Dict({"b": Int(), "c": Int()})
+        a.set({"b": 1, "c": 2})
+
+        a.add_to_model("$.d", Dict({"e": String()}))
+        a.d.e = "oh yeah"
+        self.assertEqual(a.d.e, "oh yeah")
+        self.assertEqual(a.d._parent, a)
+        self.assertEqual(a.d.e._parent, a.d)
+        a.remove_from_model("$.d")
         with self.assertRaises(AttributeError) as e:
             a.d.e = 22
         self.assertEqual(e.exception.args[0], "'Dict' object has no attribute 'd'")

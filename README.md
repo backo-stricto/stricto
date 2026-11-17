@@ -766,13 +766,21 @@ You can also extend an existing schema :
 
 ```python
 # Adding a new 'key' in the previous schema
-a.add_to_model(
+a.add_model(
             "e", String()
         )
+# or
+a.add_to_model(
+            "$.e", String()
+        )
+# then... 
 a.e='it works !'
 # now a.e exists
 
 a.remove_model( 'e' )
+# or
+a.remove_from_model( 'e' )
+
 a.e # raise an error.
 ```
 

@@ -23,7 +23,6 @@ from .change import ChangeHandler
 from .permissions import Permissions
 from .selector import Selector
 from .event import EVENT_MANAGER
-from .model import Model
 from .toolbox import validation_parameters, get_class_names_hierachie, get_content
 
 PREFIX = "MODEL_"
@@ -270,30 +269,6 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         Called by the specific JSONDecoder
         """
         return value
-
-    def get_model(self) -> Model:
-        """
-        Return a Model for this object
-
-        :param self: Description
-        :return: the schema as a object
-        :rtype: Model
-
-        Return a schema for this object
-        """
-        return Model(
-            type(self),
-            self._description,
-            self._not_none,
-            self._union,
-            self._constraints,
-            self._default,
-            self._transform,
-            self._auto_set,
-            self._exists,
-            self._attribute_name,
-            self._permissions.get_as_dict_of_strings(),
-        )
 
     def get_schema(self) -> dict:
         """
@@ -606,6 +581,57 @@ class GenericType:  # pylint: disable=too-many-instance-attributes, too-many-pub
         """
         sel = Selector(selector_as_string)
         return self.get_my_model_by_selector(sel)
+
+    def add_to_model(self, selector_as_string: str, model: GenericType) -> None:
+        """
+        add new element to the model
+        """
+        sel = Selector(selector_as_string)
+        # remove the last
+        last_selector_item = sel.pop_last()
+        if sel.empty() or last_selector_item is None:
+            raise SSyntaxError("Cannot add model at the place {O}", selector_as_string)
+
+        if last_selector_item.key is None:
+            raise SSyntaxError("Cannot add model at the place {O}", selector_as_string)
+
+        parent = self.get_my_model_by_selector(sel)
+
+        if not hasattr(parent, "add_model"):
+            raise SSyntaxError(
+                "Cannot add model at the place {O}. Place not found", selector_as_string
+            )
+
+        # Add to the dict
+        parent.add_model(last_selector_item.key, model)
+
+    def remove_from_model(self, selector_as_string: str) -> None:
+        """
+        add new element to the model
+        """
+        sel = Selector(selector_as_string)
+        # remove the last
+        last_selector_item = sel.pop_last()
+        if sel.empty() or last_selector_item is None:
+            raise SSyntaxError(
+                "Cannot remove model from the place {O}", selector_as_string
+            )
+
+        if last_selector_item.key is None:
+            raise SSyntaxError(
+                "Cannot remove model from the place {O}", selector_as_string
+            )
+
+        parent = self.get_my_model_by_selector(sel)
+
+        if not hasattr(parent, "remove_model"):
+            raise SSyntaxError(
+                "Cannot remove model from the place {O}. Place not found",
+                selector_as_string,
+            )
+
+        # Add to the dict
+        parent.remove_model(last_selector_item.key)
 
     def select(self, selector_as_string: str) -> Self | None:
         """

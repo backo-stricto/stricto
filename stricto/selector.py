@@ -90,6 +90,18 @@ class SelectorItem:
         """not equal"""
         return not self.__eq__(other)
 
+    def to_path(self) -> str:
+        """
+        Return the SelectorItem as a json path (aka a str)
+
+        :return: the path
+        :rtype: str
+        """
+        if self.index:
+            return str(self.index)
+        if self.slice:
+            return str(self.slice)
+        return self.key
 
 class Selector:
     """Selector
@@ -157,6 +169,12 @@ class Selector:
         """
         return self.selectors.pop(0)
 
+    def pop_last(self):
+        """
+        return the last element and decrease the list of selectors
+        """
+        return self.selectors.pop()
+
     def __eq__(self, other: Self) -> bool:
         """
         equality test of two object
@@ -206,3 +224,29 @@ class Selector:
             if me != sec:
                 return False
         return True
+
+    def to_json_path(self) -> str:
+        """
+        return the initial json path
+
+        :return: _description_
+        :rtype: str
+        """
+        s = []
+        for sel in self.selectors:
+            s.append(sel.to_path())
+        return ".".join(s)
+
+    def to_slash_path(self) -> str:
+        """
+        return the initial json path in /foo/bar
+
+        :return: _description_
+        :rtype: str
+        """
+        s = []
+        for sel in self.selectors:
+            if sel.is_root() or sel.is_me():
+                continue
+            s.append(sel.to_path())
+        return f"/{'/'.join(s)}"

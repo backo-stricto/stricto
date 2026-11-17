@@ -30,6 +30,8 @@ class Operator(Enum):
     OR = "$or"
     NOT = "$not"
     TRUE = "$true"  # operator which return always true
+    FALSE = "$false"  # operator which return always false
+    IGNORE = "$ignore"  # operator ro drop
 
 
 class SFilter:
@@ -127,6 +129,52 @@ class SFilter:
             self._value = value
         self._operator = operator
 
+    def __copy__(self) -> Self:
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result._path = self._path
+        result._operator = self._operator
+        result._value = self._value.__copy__()
+
+        return result
+
+    def reduce(self) -> SFilter:
+        """
+        reduce removing the filter
+
+        :param filter_to_drop: _description_
+        :type filter_to_drop: SFilter
+        :return: _description_
+        :rtype: SFilter
+        """
+        if self._operator in [Operator.AND, Operator.OR]:
+            a = SFilter(self._path, self._operator, [])
+            for sub in self._value:
+                s: SFilter = sub.reduce()
+                if s._operator == Operator.IGNORE:
+                    continue
+                if s._operator == Operator.TRUE and self._operator == Operator.OR:
+                    a._operator = Operator.TRUE
+                    a._value = None
+                    return a
+                if s._operator == Operator.TRUE and self._operator == Operator.AND:
+                    continue
+
+                if s._operator == Operator.FALSE and self._operator == Operator.AND:
+                    a._operator = Operator.FALSE
+                    a._value = None
+                    return a
+                if s._operator == Operator.FALSE and self._operator == Operator.OR:
+                    continue
+                a._value.append(s)
+
+            if len(a._value) == 0:
+                return SFilter(None, Operator.TRUE, None)
+            if len(a._value) == 1:
+                return a._value[0]
+            return a
+        return self
+
     def merge_and(self, other: Self | None) -> Self:
         """
         make a and with another SFilter
@@ -145,7 +193,7 @@ class SFilter:
 
         return SFilter(None, Operator.AND, [self, other])
 
-    def merge_on(self, other: Self | None) -> Self:
+    def merge_or(self, other: Self | None) -> Self:
         """
         make a or with another SFilter
 
